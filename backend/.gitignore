@@ -1,0 +1,7 @@
+node_modules/
+.env
+*.log
+dist/
+coverage/
+dev.db
+dev.db-journal

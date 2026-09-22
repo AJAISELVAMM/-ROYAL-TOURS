@@ -1,0 +1,116 @@
+{
+  "modelKey": "fare_model_v1",
+  "algorithm": "RandomForestClassifier",
+  "trainingTimestamp": "2026-09-04T17:01:05.284187+00:00",
+  "datasetSource": "synthetic",
+  "datasetVersion": "v1",
+  "datasetSize": 12000,
+  "trainSize": 9600,
+  "testSize": 2400,
+  "features": [
+    "vehicleType",
+    "timeOfDay",
+    "dayOfWeek",
+    "trafficLevel",
+    "weatherCondition",
+    "distanceKm",
+    "durationMinutes",
+    "baseFare",
+    "perKmRate",
+    "perMinuteRate",
+    "surgeMultiplier",
+    "quotedFare"
+  ],
+  "hyperparameters": {
+    "clf__max_depth": 12,
+    "clf__min_samples_leaf": 1,
+    "clf__n_estimators": 300
+  },
+  "cv": {
+    "folds": 5,
+    "bestF1Weighted": 0.7648
+  },
+  "metrics": {
+    "accuracy": 0.7817,
+    "precision_weighted": 0.757,
+    "recall_weighted": 0.7817,
+    "f1_weighted": 0.7539,
+    "overcharged_recall": 0.6994,
+    "per_class": {
+      "FAIR": {
+        "precision": 0.7945,
+        "recall": 0.9686,
+        "f1": 0.873
+      },
+      "OVERCHARGED": {
+        "precision": 0.8641,
+        "recall": 0.6994,
+        "f1": 0.7731
+      },
+      "SLIGHTLY_HIGH": {
+        "precision": 0.5,
+        "recall": 0.2371,
+        "f1": 0.3217
+      }
+    },
+    "confusion_matrix": [
+      [
+        1419,
+        5,
+        41
+      ],
+      [
+        93,
+        356,
+        60
+      ],
+      [
+        274,
+        51,
+        101
+      ]
+    ]
+  },
+  "featureImportance": [
+    [
+      "quotedFare",
+      0.3906001299698356
+    ],
+    [
+      "distanceKm",
+      0.17946065178319862
+    ],
+    [
+      "durationMinutes",
+      0.12292994131301008
+    ],
+    [
+      "surgeMultiplier",
+      0.04943363409435699
+    ],
+    [
+      "baseFare",
+      0.021366402372749543
+    ],
+    [
+      "perKmRate",
+      0.020840872745247974
+    ],
+    [
+      "dayOfWeek_SATURDAY",
+      0.014030232165481854
+    ],
+    [
+      "dayOfWeek_SUNDAY",
+      0.01382114849264674
+    ],
+    [
+      "trafficLevel_NORMAL",
+      0.013697077217585885
+    ],
+    [
+      "dayOfWeek_WEEKDAY",
+      0.013576970434869677
+    ]
+  ]
+}

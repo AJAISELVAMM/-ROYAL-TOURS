@@ -1,0 +1,104 @@
+/* ============================================================================
+   LoginAnimation.css — Login boy runner, click spark & card train loading
+   Matches Reference Image 1 & 2.
+   ============================================================================ */
+
+/* The animated boy overlay during login submission */
+.login-boy-overlay {
+  position: absolute;
+  pointer-events: none;
+  z-index: 50;
+  will-change: transform, opacity;
+}
+
+/* 
+  Boy running in from offscreen left towards the Login button.
+  Positioned relative to .auth-card
+*/
+.login-boy-overlay.phase-running {
+  left: -80px;
+  bottom: 74px;
+  animation: loginBoyRunIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes loginBoyRunIn {
+  0% {
+    transform: translate3d(-320px, 0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+/* 
+  Boy arrived in front of button, tapping with spark burst (Reference 1)
+*/
+.login-boy-overlay.phase-clicking {
+  left: -80px;
+  bottom: 74px;
+  transform: translate3d(0, 0, 0);
+  animation: loginBoyTapNudge 0.4s ease-out;
+}
+
+@keyframes loginBoyTapNudge {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(8px, -2px) scale(1.02);
+  }
+  100% {
+    transform: translate3d(4px, 0, 0) scale(1);
+  }
+}
+
+/* Spark flash burst at the button tap point */
+.login-spark-wrapper {
+  position: absolute;
+  left: 62px;
+  bottom: 122px;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Ensure auth-card is position: relative to anchor the boy correctly */
+.auth-page--login .auth-card {
+  position: relative !important;
+}
+
+/* Smooth transition when card content switches to the train */
+.login-card-content-fade {
+  animation: cardContentFadeIn 0.3s ease-out forwards;
+}
+
+@keyframes cardContentFadeIn {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustment for small screens */
+@media (max-width: 640px) {
+  .login-boy-overlay.phase-running,
+  .login-boy-overlay.phase-clicking {
+    left: -48px;
+    bottom: 82px;
+    transform: scale(0.78);
+  }
+  .login-spark-wrapper {
+    left: 45px;
+    bottom: 116px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .login-boy-overlay.phase-running {
+    animation: none !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+}

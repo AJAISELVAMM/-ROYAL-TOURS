@@ -1,0 +1,439 @@
+/* ============================================================================
+   LoginBackgroundAnimation.css — Royal Tours Travel Background Animation
+   Dedicated, scoped styles for the login page animated atmosphere.
+   Zero side-effects on any other page or global styles.
+   ============================================================================ */
+
+/* Outer host class added ONLY to LoginPage's .auth-page */
+.auth-page--login {
+  position: relative !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  background-color: #f3f0ff !important;
+  background-image:
+    radial-gradient(ellipse 65% 55% at 50% 48%, rgba(255, 255, 255, 0.90) 0%, rgba(243, 238, 255, 0.65) 55%, transparent 100%),
+    radial-gradient(circle at 15% 20%, rgba(216, 180, 254, 0.35) 0%, transparent 40%),
+    radial-gradient(circle at 85% 25%, rgba(192, 132, 252, 0.30) 0%, transparent 45%) !important;
+}
+
+/* Ensure the existing login card, brand header and footer sit securely in front */
+.auth-page--login > .auth-brand,
+.auth-page--login > .auth-card,
+.auth-page--login > .auth-back,
+.auth-page--login > .modal-overlay {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Main animation container: strictly behind, non-interactive */
+.login-anim-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Layer 1: Scenic Panoramic Backdrop & Ambient Glow
+   -------------------------------------------------------------------------- */
+.login-anim-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/images/login-travel-bg.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  opacity: 0.88;
+  transform: scale(1.02);
+  animation: loginBackdropBreathe 32s ease-in-out infinite alternate;
+}
+
+@keyframes loginBackdropBreathe {
+  0% {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.045) translate3d(-6px, -4px, 0);
+  }
+  100% {
+    transform: scale(1.02) translate3d(4px, 2px, 0);
+  }
+}
+
+/* Soft ambient lighting gradient over the backdrop */
+.login-anim-ambient-light {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 18%, rgba(232, 121, 249, 0.22) 0%, transparent 50%),
+    radial-gradient(circle at 12% 40%, rgba(168, 85, 247, 0.20) 0%, transparent 45%),
+    linear-gradient(180deg, rgba(245, 243, 255, 0.35) 0%, rgba(237, 233, 254, 0.15) 50%, rgba(147, 51, 234, 0.12) 100%);
+  mix-blend-mode: multiply;
+  animation: loginAmbientShift 24s ease-in-out infinite alternate;
+}
+
+@keyframes loginAmbientShift {
+  0% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0.75;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Center Safe Zone: Protects card readability with a pristine soft halo
+   -------------------------------------------------------------------------- */
+.login-anim-safezone {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 620px 680px at 50% 50%,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(250, 248, 255, 0.68) 45%,
+    rgba(245, 243, 255, 0.28) 72%,
+    transparent 95%
+  );
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Layer 2, 3, 4: SVG Canvas for Waves, Globe, Flight Path & Airplane
+   -------------------------------------------------------------------------- */
+.login-anim-svg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Animated dotted flight path */
+.login-flight-path {
+  stroke-dasharray: 7 9;
+  animation: loginFlightDash 20s linear infinite;
+}
+
+@keyframes loginFlightDash {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -320;
+  }
+}
+
+/* Glowing Neon Waves */
+.login-neon-wave-primary {
+  animation: loginWavePulse 7s ease-in-out infinite alternate;
+}
+
+.login-neon-wave-secondary {
+  animation: loginWavePulse 9s ease-in-out infinite alternate-reverse;
+}
+
+.login-neon-wave-accent {
+  animation: loginWavePulse 11s ease-in-out infinite alternate;
+}
+
+@keyframes loginWavePulse {
+  0% {
+    opacity: 0.72;
+    stroke-width: 2.2;
+    filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.75)) drop-shadow(0 0 16px rgba(168, 85, 247, 0.45));
+  }
+  50% {
+    opacity: 0.95;
+    stroke-width: 2.8;
+    filter: drop-shadow(0 0 10px rgba(216, 180, 254, 0.95)) drop-shadow(0 0 24px rgba(168, 85, 247, 0.65));
+  }
+  100% {
+    opacity: 0.78;
+    stroke-width: 2.4;
+    filter: drop-shadow(0 0 7px rgba(192, 132, 252, 0.80)) drop-shadow(0 0 18px rgba(168, 85, 247, 0.50));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Layer 4: Small Airplane Traveling Along Curved Flight Route
+   -------------------------------------------------------------------------- */
+.login-airplane-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.login-airplane-unit {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  margin-top: -22px;
+  /* SVG coordinate mapped route using offset-path */
+  offset-path: path('M 680,105 C 830,75 1010,85 1160,135 C 1290,180 1375,250 1345,340 C 1315,420 1210,460 1090,520');
+  offset-rotate: auto 8deg;
+  animation: loginPlaneTravel 26s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  filter: drop-shadow(0 4px 12px rgba(109, 40, 217, 0.45));
+}
+
+@keyframes loginPlaneTravel {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  6% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  88% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  98% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+/* Fallback for browsers that don't support offset-path */
+@supports not (offset-path: path('M 0,0')) {
+  .login-airplane-unit {
+    left: 78%;
+    top: 14%;
+    animation: loginPlaneFloat 8s ease-in-out infinite alternate;
+  }
+  @keyframes loginPlaneFloat {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(18deg);
+    }
+    100% {
+      transform: translate3d(24px, -12px, 0) rotate(22deg);
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Layer 5: Location Pins with Floating and Beacon Pulse
+   -------------------------------------------------------------------------- */
+.login-pin-group {
+  animation: loginPinFloat 5.5s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+
+.login-pin-group:nth-child(even) {
+  animation-duration: 6.8s;
+  animation-delay: -2.5s;
+}
+
+@keyframes loginPinFloat {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-7px);
+  }
+}
+
+.login-pin-pulse {
+  transform-origin: center;
+  animation: loginBeaconPulse 3.4s ease-out infinite;
+}
+
+.login-pin-pulse--delay {
+  animation-delay: 1.7s;
+}
+
+@keyframes loginBeaconPulse {
+  0% {
+    r: 6;
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 0.35;
+  }
+  100% {
+    r: 22;
+    opacity: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Holographic Globe Atmosphere
+   -------------------------------------------------------------------------- */
+.login-globe-aura {
+  animation: loginGlobeBreathe 10s ease-in-out infinite alternate;
+  transform-origin: 1210px 300px;
+}
+
+@keyframes loginGlobeBreathe {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(1.02);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Layer 6: Small Blurred Glowing Floating Particles
+   -------------------------------------------------------------------------- */
+.login-particles-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.login-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(216, 180, 254, 0.75) 50%, rgba(168, 85, 247, 0) 100%);
+  filter: blur(1px);
+  animation: loginParticleDrift linear infinite;
+}
+
+@keyframes loginParticleDrift {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--p-op, 0.6);
+  }
+  75% {
+    opacity: var(--p-op, 0.6);
+  }
+  100% {
+    transform: translate3d(var(--p-tx, 20px), var(--p-ty, -120px), 0);
+    opacity: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Subtle Clouds Drifting (Layer 7)
+   -------------------------------------------------------------------------- */
+.login-cloud-layer {
+  position: absolute;
+  top: 0;
+  left: -20%;
+  width: 140%;
+  height: 38%;
+  background:
+    radial-gradient(ellipse 45% 25% at 25% 30%, rgba(255, 255, 255, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 28% at 75% 22%, rgba(243, 232, 255, 0.50) 0%, transparent 65%),
+    radial-gradient(ellipse 35% 20% at 50% 15%, rgba(250, 245, 255, 0.35) 0%, transparent 55%);
+  filter: blur(24px);
+  opacity: 0.55;
+  animation: loginCloudDrift 70s ease-in-out infinite alternate;
+}
+
+@keyframes loginCloudDrift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(6%);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Subtle Birds Silhouette Drifting (Scenic Touch)
+   -------------------------------------------------------------------------- */
+.login-birds-layer {
+  position: absolute;
+  top: 18%;
+  left: 14%;
+  opacity: 0.52;
+  animation: loginBirdsSway 14s ease-in-out infinite alternate;
+}
+
+@keyframes loginBirdsSway {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(18px, -8px, 0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsiveness (Laptop / Tablet / Mobile)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .login-anim-backdrop {
+    opacity: 0.82;
+  }
+  .login-globe-aura,
+  .login-airplane-unit {
+    transform: scale(0.85);
+  }
+}
+
+@media (max-width: 768px) {
+  /* On mobile and small tablets, reduce decorative density for focus & speed */
+  .login-anim-backdrop {
+    opacity: 0.72;
+    transform: none !important;
+    animation: none !important;
+  }
+  .login-airplane-unit,
+  .login-birds-layer {
+    display: none;
+  }
+  .login-anim-safezone {
+    background: radial-gradient(
+      ellipse 95% 85% at 50% 50%,
+      rgba(255, 255, 255, 0.94) 0%,
+      rgba(250, 248, 255, 0.82) 65%,
+      transparent 100%
+    );
+  }
+  .login-neon-wave-accent {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: prefers-reduced-motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .login-anim-backdrop,
+  .login-anim-ambient-light,
+  .login-flight-path,
+  .login-neon-wave-primary,
+  .login-neon-wave-secondary,
+  .login-neon-wave-accent,
+  .login-airplane-unit,
+  .login-pin-group,
+  .login-pin-pulse,
+  .login-globe-aura,
+  .login-particle,
+  .login-cloud-layer,
+  .login-birds-layer {
+    animation: none !important;
+    transition: none !important;
+  }
+  .login-airplane-unit {
+    opacity: 0.8;
+    offset-distance: 40%;
+  }
+}

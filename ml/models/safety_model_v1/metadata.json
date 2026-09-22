@@ -1,0 +1,28 @@
+{
+  "modelKey": "safety_model_v1",
+  "version": "1.0.0",
+  "trainingDate": "2026-09-04T17:02:28.554674+00:00",
+  "datasetVersion": "v1",
+  "datasetSource": "synthetic",
+  "features": [
+    "timeOfDay",
+    "dayOfWeek",
+    "crowdDensity",
+    "transportAvailability",
+    "latitude",
+    "longitude",
+    "policeDistanceKm",
+    "hospitalDistanceKm",
+    "fireStationDistanceKm",
+    "emergencyResponseDistanceKm",
+    "incidentCount",
+    "crimeReports",
+    "touristReports",
+    "lightingScore"
+  ],
+  "classes": [
+    "HIGH_RISK",
+    "MODERATE",
+    "SAFE"
+  ]
+}

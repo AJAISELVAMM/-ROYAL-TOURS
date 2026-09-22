@@ -1,0 +1,26 @@
+{
+  "modelKey": "fare_model_v1",
+  "version": "1.0.0",
+  "trainingDate": "2026-09-04T17:01:05.284187+00:00",
+  "datasetVersion": "v1",
+  "datasetSource": "synthetic",
+  "features": [
+    "vehicleType",
+    "timeOfDay",
+    "dayOfWeek",
+    "trafficLevel",
+    "weatherCondition",
+    "distanceKm",
+    "durationMinutes",
+    "baseFare",
+    "perKmRate",
+    "perMinuteRate",
+    "surgeMultiplier",
+    "quotedFare"
+  ],
+  "classes": [
+    "FAIR",
+    "OVERCHARGED",
+    "SLIGHTLY_HIGH"
+  ]
+}

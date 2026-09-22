@@ -1,0 +1,223 @@
+/* ============================================================================
+   TravelBoy.css — Animations for Travel Boy Character
+   Smooth, GPU-accelerated keyframe animations matching Reference Images 1 & 3.
+   ============================================================================ */
+
+.travel-boy-root {
+  display: inline-block;
+  position: relative;
+  width: 140px;
+  height: 160px;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 10px 14px rgba(79, 70, 229, 0.25));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.travel-boy--face-left {
+  transform: scaleX(-1);
+}
+
+.travel-boy-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* --------------------------------------------------------------------------
+   MODE: RUNNING
+   Alternating legs, bobbing torso, bouncing backpack, swinging arms
+   -------------------------------------------------------------------------- */
+.travel-boy--run .boy-part-torso {
+  animation: boyTorsoBounce 0.38s ease-in-out infinite alternate;
+  transform-origin: 75px 128px;
+}
+
+.travel-boy--run .boy-part-head {
+  animation: boyHeadBounce 0.38s ease-in-out infinite alternate;
+  transform-origin: 80px 60px;
+}
+
+.travel-boy--run .boy-part-backpack {
+  animation: boyBackpackJostle 0.38s ease-in-out infinite alternate;
+  transform-origin: 40px 90px;
+}
+
+.travel-boy--run .boy-part-leg-front {
+  animation: boyLegFrontRun 0.44s ease-in-out infinite alternate;
+  transform-origin: 78px 118px;
+}
+
+.travel-boy--run .boy-part-leg-back {
+  animation: boyLegBackRun 0.44s ease-in-out infinite alternate;
+  transform-origin: 60px 118px;
+}
+
+.travel-boy--run .boy-part-arm-back {
+  animation: boyArmBackSwing 0.44s ease-in-out infinite alternate;
+  transform-origin: 54px 78px;
+}
+
+.travel-boy--run .boy-arm-pointing {
+  animation: boyArmPointReach 0.44s ease-in-out infinite alternate;
+  transform-origin: 84px 80px;
+}
+
+/* Running keyframes */
+@keyframes boyTorsoBounce {
+  0% {
+    transform: translateY(0px) rotate(4deg);
+  }
+  100% {
+    transform: translateY(-7px) rotate(8deg);
+  }
+}
+
+@keyframes boyHeadBounce {
+  0% {
+    transform: translateY(0px) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(-8px) rotate(3deg);
+  }
+}
+
+@keyframes boyBackpackJostle {
+  0% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(-9px) rotate(4deg);
+  }
+}
+
+@keyframes boyLegFrontRun {
+  0% {
+    transform: rotate(-24deg) translateY(-2px);
+  }
+  100% {
+    transform: rotate(32deg) translateY(4px);
+  }
+}
+
+@keyframes boyLegBackRun {
+  0% {
+    transform: rotate(34deg) translateY(3px);
+  }
+  100% {
+    transform: rotate(-28deg) translateY(-3px);
+  }
+}
+
+@keyframes boyArmBackSwing {
+  0% {
+    transform: rotate(35deg);
+  }
+  100% {
+    transform: rotate(-28deg);
+  }
+}
+
+@keyframes boyArmPointReach {
+  0% {
+    transform: translate(0px, 0px) rotate(-2deg);
+  }
+  100% {
+    transform: translate(5px, -3px) rotate(4deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MODE: CLICK / TAP
+   Stopping firmly on ground, extending pointing finger toward button
+   -------------------------------------------------------------------------- */
+.travel-boy--click {
+  filter: drop-shadow(0 12px 18px rgba(124, 58, 237, 0.35));
+}
+
+.travel-boy--click .boy-part-torso {
+  transform: rotate(8deg) translateY(-2px);
+  transition: transform 0.2s ease-out;
+}
+
+.travel-boy--click .boy-part-head {
+  transform: rotate(4deg) translateY(-3px);
+  transition: transform 0.2s ease-out;
+}
+
+.travel-boy--click .boy-arm-pointing {
+  animation: boyTapPress 0.5s ease-out infinite alternate;
+  transform-origin: 84px 80px;
+}
+
+@keyframes boyTapPress {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(9px, -2px) scale(1.04);
+  }
+  100% {
+    transform: translate(4px, -1px) scale(1.01);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MODE: WAVING (Inside train cabin)
+   -------------------------------------------------------------------------- */
+.travel-boy--wave .boy-arm-waving {
+  animation: boyArmWave 0.5s ease-in-out infinite alternate;
+  transform-origin: 84px 80px;
+}
+
+@keyframes boyArmWave {
+  0% {
+    transform: rotate(-14deg);
+  }
+  100% {
+    transform: rotate(18deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MODE: ENTER DOOR (Walking away into illuminated portal)
+   -------------------------------------------------------------------------- */
+.travel-boy--enter-door {
+  animation: boyFadeIntoDoor 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes boyFadeIntoDoor {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 1;
+    filter: brightness(1) drop-shadow(0 10px 14px rgba(79, 70, 229, 0.25));
+  }
+  50% {
+    transform: scale(0.82) translate3d(24px, -10px, 0);
+    opacity: 0.9;
+    filter: brightness(1.6) drop-shadow(0 0 24px rgba(216, 180, 254, 0.9));
+  }
+  100% {
+    transform: scale(0.45) translate3d(48px, -25px, 0);
+    opacity: 0;
+    filter: brightness(2.8) drop-shadow(0 0 35px rgba(255, 255, 255, 1));
+  }
+}
+
+/* Accessibility: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .travel-boy-root,
+  .travel-boy--run .boy-part-torso,
+  .travel-boy--run .boy-part-head,
+  .travel-boy--run .boy-part-backpack,
+  .travel-boy--run .boy-part-leg-front,
+  .travel-boy--run .boy-part-leg-back,
+  .travel-boy--run .boy-part-arm-back,
+  .travel-boy--run .boy-arm-pointing,
+  .travel-boy--click .boy-arm-pointing,
+  .travel-boy--wave .boy-arm-waving,
+  .travel-boy--enter-door {
+    animation: none !important;
+  }
+}

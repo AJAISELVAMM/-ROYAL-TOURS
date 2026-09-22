@@ -1,0 +1,674 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                   String                 @id @default(cuid())
+  name                 String
+  email                String                 @unique
+  phone                String                 @unique
+  passwordHash         String
+  role                 Role                   @default(TOURIST)
+  status               UserStatus             @default(ACTIVE)
+  phoneVerified        Boolean                @default(false)
+  avatarUrl            String?
+  lastLoginAt          DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  adminLogs            AdminActivityLog[]
+  intelligenceFeedback IntelligenceFeedback[]
+  locationShares       LocationShare[]
+  notifications        Notification[]
+  otpVerifications     OTPVerification[]
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
+  sosRequests          SOSRequest[]
+  reports              TravelReport[]
+  tripMemberships      TripMember[]
+  trips                Trip[]
+  currentLocation      CurrentLocation?
+  locationHistory      LocationHistory[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model OTPVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  otpHash   String
+  purpose   String   @default("REGISTER")
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phone])
+  @@map("otp_verifications")
+}
+
+model Trip {
+  id                  String         @id @default(cuid())
+  userId              String
+  destination         String
+  destinationAddress  String?
+  latitude            Float?
+  longitude           Float?
+  from                String?
+  dates               String?
+  startDate           DateTime?
+  endDate             DateTime?
+  duration            String
+  durationDays        Int            @default(2)
+  groupType           String
+  memberCount         Int            @default(1)
+  budget              Int            @default(0)
+  status              String         @default("active")
+  joinCode            String?        @unique
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  itinerary           ItineraryDay[]
+  packing             PackingDay[]
+  budgetBreakdown     TripBudget?
+  members             TripMember[]
+  places              TripPlace[]
+  expenses            TripExpense[]
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("trips")
+}
+
+model TripMember {
+  id         String    @id @default(cuid())
+  tripId     String
+  userId     String?
+  name       String
+  phone      String
+  role       String    @default("Member")
+  status     String    @default("ACCEPTED")
+  online     Boolean   @default(false)
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  trip       Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user       User?     @relation(fields: [userId], references: [id])
+
+  @@index([tripId])
+  @@map("trip_members")
+}
+
+model TripPlace {
+  id      String @id @default(cuid())
+  tripId  String
+  placeId String
+  day     Int    @default(1)
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  trip    Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("trip_places")
+}
+
+model ItineraryDay {
+  id         String              @id @default(cuid())
+  tripId     String
+  day        Int
+  activities ItineraryActivity[]
+  trip       Trip                @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("itinerary_days")
+}
+
+model ItineraryActivity {
+  id      String       @id @default(cuid())
+  dayId   String
+  time    String
+  title   String
+  type    String
+  note    String?
+  placeId String?
+  day     ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+  @@map("itinerary_activities")
+}
+
+model PackingDay {
+  id     String        @id @default(cuid())
+  tripId String
+  day    Int
+  reason String?
+  trip   Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  items  PackingItem[]
+
+  @@index([tripId])
+  @@map("packing_days")
+}
+
+model PackingItem {
+  id       String     @id @default(cuid())
+  dayId    String
+  label    String
+  reason   String?
+  packed   Boolean    @default(false)
+  priority String     @default("RECOMMENDED")
+  day      PackingDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+  @@map("packing_items")
+}
+
+model TripBudget {
+  id            String @id @default(cuid())
+  tripId        String @unique
+  hotel         Int    @default(0)
+  food          Int    @default(0)
+  transport     Int    @default(0)
+  entertainment Int    @default(0)
+  attractions   Int    @default(0)
+  trip          Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("trip_budgets")
+}
+
+model TripExpense {
+  id          String   @id @default(cuid())
+  tripId      String
+  category    String
+  title       String
+  description String?
+  amount      Int
+  currency    String   @default("INR")
+  spentAt     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("trip_expenses")
+}
+
+model Place {
+  id           String      @id @default(cuid())
+  name         String
+  category     String?
+  description  String?
+  location     String?
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  rating       Float       @default(0)
+  reviews      Int         @default(0)
+  distanceKm   Float?
+  openingHours String?
+  entryPrice   String?
+  facilities   String?
+  verified     Boolean     @default(false)
+  source       String      @default("seed")
+  createdAt    DateTime    @default(now())
+  tripPlaces   TripPlace[]
+
+  @@map("places")
+}
+
+model Hotel {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  address       String?
+  location      String?
+  latitude      Float?
+  longitude     Float?
+  rating        Float    @default(0)
+  reviews       Int      @default(0)
+  pricePerNight Int      @default(0)
+  distanceKm    Float?
+  facilities    String?
+  contact       String?
+  website       String?
+  checkIn       String?
+  checkOut      String?
+  verified      Boolean  @default(false)
+  source        String   @default("seed")
+  createdAt     DateTime @default(now())
+
+  @@map("hotels")
+}
+
+model Restaurant {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  address      String?
+  location     String?
+  latitude     Float?
+  longitude    Float?
+  rating       Float    @default(0)
+  reviews      Int      @default(0)
+  priceRange   String?
+  cuisine      String?
+  veg          Boolean  @default(false)
+  distanceKm   Float?
+  openingHours String?
+  contact      String?
+  verified     Boolean  @default(false)
+  source       String   @default("seed")
+  createdAt    DateTime @default(now())
+
+  @@map("restaurants")
+}
+
+model Theatre {
+  id         String        @id @default(cuid())
+  name       String
+  location   String?
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  rating     Float         @default(0)
+  distanceKm Float?
+  contact    String?
+  verified   Boolean       @default(false)
+  source     String        @default("seed")
+  createdAt  DateTime      @default(now())
+  shows      TheatreShow[]
+
+  @@map("theatres")
+}
+
+model TheatreShow {
+  id            String  @id @default(cuid())
+  theatreId     String
+  movieTitle    String
+  language      String?
+  format        String?
+  duration      String?
+  certification String?
+  showDate      String?
+  showTime      String?
+  screen        String?
+  bookingUrl    String?
+  theatre       Theatre @relation(fields: [theatreId], references: [id], onDelete: Cascade)
+
+  @@index([theatreId])
+  @@map("theatre_shows")
+}
+
+model Shopping {
+  id           String   @id @default(cuid())
+  name         String
+  category     String?
+  description  String?
+  address      String?
+  location     String?
+  latitude     Float?
+  longitude    Float?
+  rating       Float    @default(0)
+  distanceKm   Float?
+  openingHours String?
+  contact      String?
+  verified     Boolean  @default(false)
+  source       String   @default("seed")
+  createdAt    DateTime @default(now())
+
+  @@map("shopping")
+}
+
+model TransportRoute {
+  id         String   @id @default(cuid())
+  mode       String
+  from       String
+  to         String
+  price      Int
+  duration   String
+  label      String?
+  distanceKm Float?
+  createdAt  DateTime @default(now())
+
+  @@map("transport_routes")
+}
+
+model TravelReport {
+  id            String         @id @default(cuid())
+  userId        String
+  category      ReportCategory
+  location      String
+  latitude      Float?
+  longitude     Float?
+  description   String
+  expectedPrice Int            @default(0)
+  chargedPrice  Int            @default(0)
+  evidence      String?
+  status        ReportStatus   @default(UNDER_REVIEW)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("travel_reports")
+}
+
+model SafetyAlert {
+  id          String         @id @default(cuid())
+  type        String
+  location    String
+  latitude    Float?
+  longitude   Float?
+  severity    SafetySeverity @default(MEDIUM)
+  status      AlertStatus    @default(ACTIVE)
+  description String?
+  reporter    String?
+  date        String?
+  createdAt   DateTime       @default(now())
+
+  @@map("safety_alerts")
+}
+
+model SOSRequest {
+  id            String         @id @default(cuid())
+  userId        String?
+  tripId        String?
+  emergencyType EmergencyType
+  groupSOS      Boolean        @default(false)
+  memberCount   Int            @default(1)
+  latitude      Float
+  longitude     Float
+  accuracy      Float?
+  locationText  String?
+  status        SOSStatus      @default(ACTIVE)
+  smsStatus     DeliveryStatus @default(PENDING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User?          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sos_requests")
+}
+
+model LocationShare {
+  id        String    @id @default(cuid())
+  userId    String
+  tripId    String
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  active    Boolean   @default(true)
+  startedAt DateTime  @default(now())
+  stoppedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tripId])
+  @@map("location_shares")
+}
+
+model CurrentLocation {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  heading   Float?
+  speed     Float?
+  timestamp DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([latitude, longitude])
+  @@map("current_locations")
+}
+
+model LocationHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  heading   Float?
+  speed     Float?
+  timestamp DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@map("location_history")
+}
+
+model EmergencyContact {
+  id     String      @id @default(cuid())
+  name   String
+  phone  String
+  type   ContactType
+  active Boolean     @default(true)
+
+  @@map("emergency_contacts")
+}
+
+model EmergencyService {
+  id        String               @id @default(cuid())
+  name      String
+  type      EmergencyServiceType
+  address   String?
+  latitude  Float
+  longitude Float
+  phone     String?
+  active    Boolean              @default(true)
+  source    String               @default("seed")
+  createdAt DateTime             @default(now())
+
+  @@index([type])
+  @@map("emergency_services")
+}
+
+model IntelligenceModel {
+  id                String          @id @default(cuid())
+  key               String          @unique
+  kind              PredictionModel
+  version           String
+  trainingDate      DateTime?
+  datasetVersion    String?
+  datasetSource     String?
+  features          String?
+  hyperparameters   String?
+  metrics           String?
+  featureImportance String?
+  status            String          @default("ACTIVE")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("intelligence_models")
+}
+
+model PredictionLog {
+  id           String          @id @default(cuid())
+  model        PredictionModel
+  modelVersion String?
+  inputHash    String
+  input        String?
+  output       String?
+  method       String          @default("rule_based")
+  createdAt    DateTime        @default(now())
+
+  @@index([model])
+  @@index([createdAt])
+  @@map("prediction_logs")
+}
+
+model IntelligenceFeedback {
+  id        String       @id @default(cuid())
+  userId    String?
+  type      FeedbackType
+  refId     String?
+  rating    Int?
+  useful    Boolean?
+  comment   String?
+  createdAt DateTime     @default(now())
+  user      User?        @relation(fields: [userId], references: [id])
+
+  @@index([type])
+  @@map("intelligence_feedback")
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String?
+  type      NotificationType
+  channel   NotificationChannel
+  status    DeliveryStatus      @default(PENDING)
+  content   String?
+  payload   String?
+  createdAt DateTime            @default(now())
+  user      User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AdminActivityLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  action     String
+  resource   String?
+  resourceId String?
+  ip         String?
+  createdAt  DateTime @default(now())
+  admin      User?    @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@map("admin_activity_logs")
+}
+
+enum Role {
+  TOURIST
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+}
+
+enum SOSStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  ESCALATED
+  RESOLVED
+  CANCELLED
+}
+
+enum ReportStatus {
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum ReportCategory {
+  FARE
+  RESTAURANT
+  SHOP
+  ATTRACTION
+  OTHER
+}
+
+enum SafetySeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESOLVED
+}
+
+enum NotificationType {
+  OTP
+  SOS
+  GROUP_SOS
+  LOCATION_SHARE
+  REPORT_UPDATE
+  TRIP_UPDATE
+  TRIP_INVITE
+  ADMIN_ALERT
+}
+
+enum NotificationChannel {
+  SMS
+  IN_APP
+  PUSH
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum EmergencyType {
+  MEDICAL
+  POLICE
+  FIRE
+  HOSPITAL
+}
+
+enum ContactType {
+  ADMIN
+  POLICE
+  MEDICAL
+  FIRE
+}
+
+enum EmergencyServiceType {
+  POLICE
+  HOSPITAL
+  FIRE_STATION
+  PHARMACY
+}
+
+enum FeedbackType {
+  FARE
+  RECOMMENDATION
+  SAFETY
+  PACKING
+  ROUTE
+}
+
+enum PredictionModel {
+  FARE
+  SAFETY
+}

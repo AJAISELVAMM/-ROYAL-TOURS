@@ -1,0 +1,118 @@
+{
+  "modelKey": "safety_model_v1",
+  "algorithm": "RandomForestClassifier",
+  "trainingTimestamp": "2026-09-04T17:02:28.554674+00:00",
+  "datasetSource": "synthetic",
+  "datasetVersion": "v1",
+  "datasetSize": 12000,
+  "trainSize": 9600,
+  "testSize": 2400,
+  "features": [
+    "timeOfDay",
+    "dayOfWeek",
+    "crowdDensity",
+    "transportAvailability",
+    "latitude",
+    "longitude",
+    "policeDistanceKm",
+    "hospitalDistanceKm",
+    "fireStationDistanceKm",
+    "emergencyResponseDistanceKm",
+    "incidentCount",
+    "crimeReports",
+    "touristReports",
+    "lightingScore"
+  ],
+  "hyperparameters": {
+    "clf__max_depth": null,
+    "clf__min_samples_leaf": 1,
+    "clf__n_estimators": 200
+  },
+  "cv": {
+    "folds": 5,
+    "bestF1Weighted": 0.8873
+  },
+  "metrics": {
+    "accuracy": 0.8771,
+    "precision_weighted": 0.879,
+    "recall_weighted": 0.8771,
+    "f1_weighted": 0.8776,
+    "high_risk_recall": 0.9543,
+    "per_class": {
+      "HIGH_RISK": {
+        "precision": 0.9126,
+        "recall": 0.9543,
+        "f1": 0.933
+      },
+      "MODERATE": {
+        "precision": 0.7759,
+        "recall": 0.8084,
+        "f1": 0.7918
+      },
+      "SAFE": {
+        "precision": 0.9249,
+        "recall": 0.8818,
+        "f1": 0.9028
+      }
+    },
+    "confusion_matrix": [
+      [
+        522,
+        25,
+        0
+      ],
+      [
+        50,
+        561,
+        83
+      ],
+      [
+        0,
+        137,
+        1022
+      ]
+    ]
+  },
+  "featureImportance": [
+    [
+      "policeDistanceKm",
+      0.1562763148382952
+    ],
+    [
+      "lightingScore",
+      0.13429842291127964
+    ],
+    [
+      "hospitalDistanceKm",
+      0.12563968663888753
+    ],
+    [
+      "fireStationDistanceKm",
+      0.11743749745718357
+    ],
+    [
+      "emergencyResponseDistanceKm",
+      0.11714899744473066
+    ],
+    [
+      "incidentCount",
+      0.08922796251514405
+    ],
+    [
+      "crimeReports",
+      0.061816656856744596
+    ],
+    [
+      "crowdDensity_DESERTED",
+      0.03569287700579199
+    ],
+    [
+      "longitude",
+      0.027221335049711495
+    ],
+    [
+      "latitude",
+      0.027105301407768657
+    ]
+  ]
+}
