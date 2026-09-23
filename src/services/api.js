@@ -67,6 +67,24 @@ export function setUnauthorizedHandler(fn) {
   onUnauthorized = fn;
 }
 
+export async function fetchWithRetry(url, options = {}, retries = 3, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      // If Render returns 502/503/504 while waking up from cold start, retry
+      if (!res.ok && [502, 503, 504].includes(res.status) && i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (err.name === 'AbortError') throw err;
+      if (i === retries - 1) throw err;
+      await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
+    }
+  }
+}
+
 async function tryRefresh() {
   if (!refreshToken) {
     const stored = readStoredTokens();
@@ -103,7 +121,7 @@ export async function apiFetch(path, { method = 'GET', body, auth = true, signal
     return headers;
   };
 
-  let res = await fetch(API_BASE + path, {
+  let res = await fetchWithRetry(API_BASE + path, {
     method,
     headers: build(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -114,7 +132,7 @@ export async function apiFetch(path, { method = 'GET', body, auth = true, signal
   if (res.status === 401 && auth && refreshToken) {
     const ok = await tryRefresh();
     if (ok) {
-      res = await fetch(API_BASE + path, {
+      res = await fetchWithRetry(API_BASE + path, {
         method,
         headers: build(),
         body: body !== undefined ? JSON.stringify(body) : undefined,
