@@ -130,14 +130,72 @@ async function tryRefresh() {
   return refreshPromise;
 }
 
+let isBackendWarm = false;
+let backendReadyPromise = null;
+
 export async function pingBackendHealth() {
+  if (isBackendWarm) return true;
   try {
     const rootUrl = envApiUrl ? envApiUrl.replace(/\/api\/?$/, '') : '';
     const target = rootUrl ? `${rootUrl}/health` : '/health';
-    const res = await fetch(target, { method: 'GET', signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined });
-    return res.ok;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(target, { method: 'GET', signal: controller.signal });
+    clearTimeout(timer);
+    if (res.ok) {
+      isBackendWarm = true;
+      return true;
+    }
+    return false;
   } catch {
     return false;
+  }
+}
+
+export async function waitForBackendReady({ timeoutMs = 45000, initialIntervalMs = 2000 } = {}) {
+  if (isBackendWarm) return true;
+  if (backendReadyPromise) return backendReadyPromise;
+
+  backendReadyPromise = (async () => {
+    const startTime = Date.now();
+    let currentInterval = initialIntervalMs;
+    const rootUrl = envApiUrl ? envApiUrl.replace(/\/api\/?$/, '') : '';
+    const target = rootUrl ? `${rootUrl}/health` : '/health';
+
+    while (Date.now() - startTime < timeoutMs) {
+      const controller = new AbortController();
+      const perReqTimeout = Math.min(7000, timeoutMs - (Date.now() - startTime));
+      const timer = setTimeout(() => controller.abort(), Math.max(1000, perReqTimeout));
+
+      try {
+        const res = await fetch(target, { method: 'GET', signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          isBackendWarm = true;
+          return true;
+        }
+      } catch {
+        clearTimeout(timer);
+      }
+
+      if (Date.now() - startTime >= timeoutMs) break;
+
+      // Controlled backoff delay between wake-up attempts (no request storm)
+      await new Promise((resolve) => setTimeout(resolve, currentInterval));
+      currentInterval = Math.min(currentInterval * 1.25, 3500);
+    }
+
+    backendReadyPromise = null;
+    return false;
+  })();
+
+  try {
+    const result = await backendReadyPromise;
+    return result;
+  } finally {
+    if (!isBackendWarm) {
+      backendReadyPromise = null;
+    }
   }
 }
 

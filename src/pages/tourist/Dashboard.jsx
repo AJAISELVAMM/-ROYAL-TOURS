@@ -35,7 +35,6 @@ export default function Dashboard() {
   const [restaurants, setRestaurants] = useState([]);
   const [emergencyFacilities, setEmergencyFacilities] = useState([]);
   const [mapCategory, setMapCategory] = useState('attractions');
-  const [searchQuery, setSearchQuery] = useState('');
   const [liveDestination, setLiveDestination] = useState(null);
 
   const lastCatalogCoordRef = useRef({ lat: null, lon: null });
@@ -195,26 +194,6 @@ export default function Dashboard() {
       .catch(() => {});
   }, [currentLocation?.latitude, currentLocation?.longitude]);
 
-  // Execute Search
-  function handleSearchSubmit(e) {
-    if (e) e.preventDefault();
-    if (searchQuery.trim()) {
-      try {
-        const stored = JSON.parse(localStorage.getItem('tourguard_recent_activity') || '[]');
-        stored.unshift({
-          id: `search-${Date.now()}`,
-          icon: 'search',
-          title: `Searched for "${searchQuery.trim()}"`,
-          desc: 'Search query',
-          date: 'Just now'
-        });
-        localStorage.setItem('tourguard_recent_activity', JSON.stringify(stored.slice(0, 10)));
-      } catch {
-        // ignore
-      }
-      navigate(`/discover/places?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  }
 
   // Combined Map Markers for Nearby Map based on active filter
   const mapMarkers = useMemo(() => {
@@ -426,23 +405,6 @@ export default function Dashboard() {
                 : 'Acquiring your live device GPS location…'}
             </p>
           </div>
-
-          {/* Search bar */}
-          <form className="dash-search-form" onSubmit={handleSearchSubmit}>
-            <div className="dash-search-input-wrap">
-              <Icon name="search" size={17} className="dash-search-icon" />
-              <input
-                type="text"
-                className="dash-search-input"
-                placeholder="Search places, attractions, hotels, food..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="dash-search-btn">
-              Search
-            </button>
-          </form>
         </div>
 
         {/* RIGHT: Destination Hero Banner */}

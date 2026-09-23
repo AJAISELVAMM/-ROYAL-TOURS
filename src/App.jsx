@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { pingBackendHealth } from './services/api.js';
 
 import TouristLayout from './components/layout/TouristLayout.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
@@ -51,6 +52,11 @@ import AdminAnalytics from './pages/admin/AdminAnalytics.jsx';
 import AdminAccount from './pages/admin/AdminAccount.jsx';
 
 export default function App() {
+  useEffect(() => {
+    // Non-blocking background ping to wake Render cold start on initial visit
+    pingBackendHealth();
+  }, []);
+
   return (
     <Routes>
       {/* Public */}

@@ -6,7 +6,7 @@
 // through the same /api/auth/login endpoint and the backend returns the role.
 // ============================================================================
 
-import { api, ApiError, setTokens, clearTokens } from './api.js';
+import { api, ApiError, setTokens, clearTokens, waitForBackendReady } from './api.js';
 
 const PENDING_REG_KEY = 'tourguard_pending_registration';
 const SESSION_KEY = 'tourguard_session';
@@ -211,6 +211,8 @@ export async function login(email, password) {
     return { success: false, error: 'Please enter your email and password.' };
   }
   try {
+    // Automatically wait for backend cold start to finish if asleep
+    await waitForBackendReady();
     const data = await api.post('/auth/login', { email: e, password: p }, { auth: false });
     setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
     const role = (data.user.role || 'tourist').toLowerCase();

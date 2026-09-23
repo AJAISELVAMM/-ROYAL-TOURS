@@ -61,6 +61,7 @@ export default function TranslatorView() {
   }, []);
 
   async function handleTranslate(textToTranslate) {
+    if (loading) return;
     const text = (textToTranslate || sourceText).trim();
     if (!text) {
       push('Please enter text to translate.', 'info', { id: 'trans-empty' });
@@ -79,7 +80,7 @@ export default function TranslatorView() {
       setTranslatedText(result || '');
     } catch (err) {
       if (err.name === 'AbortError' || abortCtrl.signal.aborted) return;
-      const fallbackMsg = 'Translation service is temporarily unavailable. Please try again.';
+      const fallbackMsg = err?.message || 'Translation service is temporarily unavailable. Please try again.';
       setError(fallbackMsg);
       push(fallbackMsg, 'error', { id: 'translation-error' });
     } finally {

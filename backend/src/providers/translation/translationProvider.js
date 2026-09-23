@@ -155,8 +155,21 @@ export function translationConfigured() {
   return true;
 }
 
+function getGeminiApiKey() {
+  return (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_AI_KEY ||
+    process.env.GOOGLE_GEMINI_API_KEY ||
+    process.env.TRANSLATION_API_KEY ||
+    config.translation?.geminiApiKey ||
+    config.translation?.apiKey ||
+    ''
+  ).trim();
+}
+
 /**
- * 1. LibreTranslate / Argos Engine
+ * 1. LibreTranslate / Argos Engine (if explicitly configured)
  */
 async function translateViaLibreTranslate(text, source, target) {
   const baseUrl = (process.env.LIBRETRANSLATE_URL || config.translation?.libreTranslateUrl || '').trim();
@@ -164,7 +177,7 @@ async function translateViaLibreTranslate(text, source, target) {
 
   const url = `${baseUrl.replace(/\/+$/, '')}/translate`;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), 3500);
 
   try {
     const res = await fetch(url, {
@@ -194,77 +207,42 @@ async function translateViaLibreTranslate(text, source, target) {
 }
 
 /**
- * 2. ML Service Translation Endpoint
- */
-async function translateViaMlService(text, source, target) {
-  const mlUrl = (config.mlServiceUrl || process.env.ML_SERVICE_URL || 'https://royal-tours-ml.onrender.com').trim();
-  if (!mlUrl) return null;
-
-  const url = `${mlUrl.replace(/\/+$/, '')}/translate`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4500);
-
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text,
-        sourceLanguage: source,
-        targetLanguage: target
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.translated) {
-        return data.translated.trim();
-      }
-    }
-  } catch (err) {
-    clearTimeout(timer);
-    console.warn(`[translationProvider:ml_service] ${err.message}`);
-  }
-  return null;
-}
-
-/**
- * 3. Google Gemini (Valid Models only)
+ * 2. Google Gemini API (Primary fast translation engine)
  */
 async function translateViaGemini(text, source, target) {
-  const apiKey = (process.env.GEMINI_API_KEY || config.translation?.geminiApiKey || '').trim();
+  const apiKey = getGeminiApiKey();
   if (!apiKey) return null;
 
   const sourceName = LANGUAGE_LABELS[source] || source;
   const targetName = LANGUAGE_LABELS[target] || target;
 
-  const prompt = `You are a professional, accurate translator.
+  const prompt = `You are a professional language translator.
 Translate the following text from ${sourceName} (${source}) to ${targetName} (${target}).
 
-STRICT RULES:
-1. Output ONLY the raw translated text.
-2. Absolutely NO notes, NO explanation, NO introduction, NO romanized pronunciation.
-3. Do NOT wrap the translation in quotation marks.
-4. Do NOT use markdown code blocks.
-5. Preserve all original paragraphs, punctuation, numbers, and formatting.
+MANDATORY RULES:
+1. Output ONLY the raw translated text in the target language.
+2. Absolutely DO NOT include explanations, romanized pronunciation, greetings, notes, or original text.
+3. Absolutely DO NOT surround output with quotes or markdown codeblocks.
+4. Preserve punctuation, numbers, and paragraphs.
 
-Text to translate:
+Text:
 ${text}`;
 
-  // Valid official Google Gemini models
   const configuredModel = (process.env.GEMINI_MODEL || config.translation?.geminiModel || '').trim();
-  const modelsToTry = [
-    configuredModel,
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
-    'gemini-2.0-flash'
-  ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+  const primaryModel =
+    configuredModel &&
+    !configuredModel.includes('2.5-flash') &&
+    !configuredModel.includes('1.5-flash') &&
+    !configuredModel.includes('2.0-flash')
+      ? configuredModel
+      : 'gemini-3.6-flash';
+
+  const modelsToTry = [primaryModel, 'gemini-flash-latest'].filter((m, idx, arr) => Boolean(m) && arr.indexOf(m) === idx);
 
   for (const model of modelsToTry) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), 7000);
 
     try {
       const res = await fetch(url, {
@@ -280,7 +258,7 @@ ${text}`;
           generationConfig: {
             temperature: 0.1,
             topP: 0.95,
-            maxOutputTokens: 2048
+            maxOutputTokens: 512
           }
         }),
         signal: controller.signal
@@ -293,15 +271,29 @@ ${text}`;
         const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (candidateText && typeof candidateText === 'string') {
           let translated = candidateText.trim();
-          if ((translated.startsWith('"') && translated.endsWith('"')) || (translated.startsWith("'") && translated.endsWith("'"))) {
+          translated = translated.replace(/^```[a-z]*\n([\s\S]*?)\n```$/i, '$1').trim();
+          if (
+            (translated.startsWith('"') && translated.endsWith('"')) ||
+            (translated.startsWith("'") && translated.endsWith("'"))
+          ) {
             translated = translated.slice(1, -1).trim();
           }
-          return translated;
+          translated = translated.replace(/^(here is the translation:?|translation:?)\s*/i, '').trim();
+          if (translated) {
+            return translated;
+          }
         }
+      } else if (res.status === 429) {
+        // Quota exceeded on this model, try next model
+        console.warn(`[translationProvider:gemini:${model}] 429 quota reached, trying fallback model.`);
       }
     } catch (err) {
       clearTimeout(timer);
       console.warn(`[translationProvider:gemini:${model}] ${err.message}`);
+      if (err.name === 'AbortError') {
+        // If timed out, break immediately to avoid waiting again
+        break;
+      }
     }
   }
 
@@ -309,13 +301,13 @@ ${text}`;
 }
 
 /**
- * 4. Free MyMemory Engine Fallback
+ * 3. Free MyMemory Engine Fallback (Fast backup when Gemini quota exhausted)
  */
 async function translateViaMyMemory(text, source, target) {
   const langpair = `${source}|${target}`;
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langpair)}`;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), 3500);
 
   try {
     const res = await fetch(url, {
@@ -326,7 +318,11 @@ async function translateViaMyMemory(text, source, target) {
     if (res.ok) {
       const data = await res.json();
       const translated = (data?.responseData?.translatedText || '').trim();
-      if (translated && !translated.toLowerCase().includes('my memory') && !translated.startsWith('QUERY LENGTH LIMIT')) {
+      if (
+        translated &&
+        !translated.toLowerCase().includes('my memory') &&
+        !translated.startsWith('QUERY LENGTH LIMIT')
+      ) {
         return translated;
       }
     }
@@ -345,7 +341,12 @@ export async function fetchLibreTranslateLanguages() {
 }
 
 /**
- * Master translate function with instant fallback and caching
+ * Master translate function:
+ * Tier 1: In-memory LRU Cache (<1ms)
+ * Tier 2: Phrase Dictionary (<1ms)
+ * Tier 3: LibreTranslate (if explicitly configured)
+ * Tier 4: Google Gemini API (high speed, official models)
+ * Tier 5: MyMemory Fallback (reliable backup)
  */
 export async function translate(text, source = 'en', target = 'ta') {
   const q = String(text || '').trim();
@@ -375,27 +376,20 @@ export async function translate(text, source = 'en', target = 'ta') {
     return libreResult;
   }
 
-  // 4. Try ML Service
-  const mlResult = await translateViaMlService(q, src, tgt);
-  if (mlResult) {
-    setCachedTranslation(cacheKey, mlResult);
-    return mlResult;
-  }
-
-  // 5. Try Google Gemini
+  // 4. Primary: Google Gemini API
   const geminiResult = await translateViaGemini(q, src, tgt);
   if (geminiResult) {
     setCachedTranslation(cacheKey, geminiResult);
     return geminiResult;
   }
 
-  // 6. Try MyMemory
+  // 5. Fallback: MyMemory
   const myMemoryResult = await translateViaMyMemory(q, src, tgt);
   if (myMemoryResult) {
     setCachedTranslation(cacheKey, myMemoryResult);
     return myMemoryResult;
   }
 
-  // If all online services fail or time out, return the original text with warning
+  // If all services fail or time out
   throw serviceUnavailable('Translation service is temporarily busy. Please try again in a moment.', 'TRANSLATION_TIMEOUT');
 }
