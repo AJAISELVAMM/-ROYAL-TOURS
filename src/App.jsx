@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { App as CapApp } from '@capacitor/app';
 import { pingBackendHealth } from './services/api.js';
 
 import TouristLayout from './components/layout/TouristLayout.jsx';
@@ -51,6 +52,41 @@ import AdminSafety from './pages/admin/AdminSafety.jsx';
 import AdminAnalytics from './pages/admin/AdminAnalytics.jsx';
 import AdminAccount from './pages/admin/AdminAccount.jsx';
 
+function AppBackButtonHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    let handler;
+    const setup = async () => {
+      try {
+        handler = await CapApp.addListener('backButton', ({ canGoBack }) => {
+          const rootPaths = ['/', '/dashboard', '/login'];
+          if (rootPaths.includes(location.pathname)) {
+            CapApp.minimizeApp();
+          } else {
+            if (canGoBack) {
+              navigate(-1);
+            } else {
+              navigate('/dashboard');
+            }
+          }
+        });
+      } catch {
+        // Safe fallback if not running inside Capacitor
+      }
+    };
+    setup();
+    return () => {
+      if (handler && typeof handler.remove === 'function') {
+        handler.remove();
+      }
+    };
+  }, [location.pathname, navigate]);
+
+  return null;
+}
+
 export default function App() {
   useEffect(() => {
     // Non-blocking background ping to wake Render cold start on initial visit
@@ -58,7 +94,9 @@ export default function App() {
   }, []);
 
   return (
-    <Routes>
+    <>
+      <AppBackButtonHandler />
+      <Routes>
       {/* Public */}
       <Route path="/" element={<LandingPage />} />
       <Route
@@ -157,5 +195,6 @@ export default function App() {
       {/* Fallback */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 }
