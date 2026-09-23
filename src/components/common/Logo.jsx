@@ -11,7 +11,7 @@ export default function Logo({ size = 34, light = false, compact = false }) {
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
+            objectFit: 'contain',
             borderRadius: 'inherit',
             display: 'block'
           }}
@@ -19,9 +19,12 @@ export default function Logo({ size = 34, light = false, compact = false }) {
       </span>
       {!compact && (
         <span className="logo-text">
-          ROYAL <em>TOURS</em>
+          <span className="logo-text-royal">ROYAL</span>
+          <span className="logo-text-tours">TOURS</span>
         </span>
       )}
     </div>
   );
 }
+
+export { Logo as RoyalToursLogo };

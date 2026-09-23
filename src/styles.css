@@ -673,25 +673,74 @@ textarea.trans-textarea:focus {
    Logo
    ============================================================================ */
 
-.logo { display: flex; align-items: center; gap: 11px; }
+.logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
 .logo-mark {
   display: flex; align-items: center; justify-content: center;
-  border-radius: 11px;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  border-radius: 9px;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4), 0 0 10px rgba(245, 158, 11, 0.25);
   flex-shrink: 0;
   overflow: hidden;
+  background: #2b0453;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 .logo-mark-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: inherit;
   display: block;
 }
-.logo-text { font-weight: 750; font-size: 18px; letter-spacing: -0.02em; color: var(--text); }
-.logo-text em { font-style: normal; color: var(--purple); }
-.logo-light .logo-text { color: #fff; }
-.logo-light .logo-text em { color: var(--lavender); }
+.logo-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.05;
+  justify-content: center;
+}
+.logo-text-royal {
+  font-family: 'Cinzel', 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  font-weight: 800;
+  font-size: 16.5px;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #FFF3B0 0%, #FFD700 35%, #F59E0B 75%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #F59E0B;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+.logo-text-tours {
+  font-family: 'Cinzel', 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 9.5px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #D97706;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  margin-top: 1px;
+}
+.logo-light .logo-text-royal {
+  background: linear-gradient(135deg, #FFF7CC 0%, #FFD700 40%, #FBBF24 80%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #FBBF24;
+}
+.logo-light .logo-text-tours {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #FCD34D;
+}
+.logo-text em {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 9.5px;
+  letter-spacing: 0.32em;
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 /* ============================================================================
    App shell layout (sidebar + topbar + page)
