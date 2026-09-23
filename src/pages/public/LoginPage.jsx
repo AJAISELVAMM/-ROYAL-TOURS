@@ -97,7 +97,7 @@ export default function LoginPage() {
     <div className="auth-page auth-page--login">
       <LoginBackgroundAnimation />
       <div className="auth-brand">
-        <Logo size={36} />
+        <Logo size={36} showIcon={false} />
       </div>
       <div className="auth-card">
         {animPhase === 'train-loading' ? (

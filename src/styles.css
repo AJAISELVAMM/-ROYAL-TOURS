@@ -674,6 +674,7 @@ textarea.trans-textarea:focus {
    ============================================================================ */
 
 .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.logo.logo-no-icon { gap: 0; }
 .logo-mark {
   display: flex; align-items: center; justify-content: center;
   border-radius: 9px;
@@ -1018,7 +1019,28 @@ textarea.trans-textarea:focus {
     radial-gradient(50% 70% at 0% 100%, rgba(124, 58, 237, 0.08), transparent 60%),
     var(--bg);
 }
-.auth-brand { margin-bottom: 26px; }
+.auth-brand {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+.auth-brand .logo {
+  gap: 0;
+  justify-content: center;
+}
+.auth-brand .logo-text {
+  align-items: center;
+  text-align: center;
+}
+.auth-brand .logo-text-royal {
+  font-size: 23px;
+  letter-spacing: 0.08em;
+}
+.auth-brand .logo-text-tours {
+  font-size: 12px;
+  letter-spacing: 0.36em;
+  margin-top: 2px;
+}
 .auth-card {
   width: 100%;
   max-width: 430px;
@@ -1076,6 +1098,13 @@ textarea.trans-textarea:focus {
   }
   .auth-brand {
     margin-bottom: 18px;
+  }
+  .auth-brand .logo-text-royal {
+    font-size: 20px;
+  }
+  .auth-brand .logo-text-tours {
+    font-size: 11px;
+    letter-spacing: 0.32em;
   }
   .auth-card {
     padding: 26px 18px;
@@ -4088,6 +4117,14 @@ textarea.trans-textarea:focus {
   justify-content: space-between;
 }
 
+.landing-header .logo.logo-no-icon { gap: 0; }
+.landing-header .logo-text-royal { font-size: 21px; letter-spacing: 0.07em; }
+.landing-header .logo-text-tours { font-size: 11.5px; letter-spacing: 0.34em; margin-top: 1.5px; }
+
+.landing-footer .logo.logo-no-icon { gap: 0; }
+.landing-footer .logo-text-royal { font-size: 18px; letter-spacing: 0.06em; }
+.landing-footer .logo-text-tours { font-size: 10px; letter-spacing: 0.32em; }
+
 .landing-actions {
   display: flex;
   align-items: center;
@@ -4160,7 +4197,7 @@ textarea.trans-textarea:focus {
 }
 
 .landing-brand-title {
-  font-size: clamp(40px, 6.5vw, 70px);
+  font-size: clamp(48px, 7.5vw, 78px);
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 1.05;

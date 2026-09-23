@@ -12,7 +12,7 @@ export default function LandingPage() {
       {/* Top Navbar */}
       <header className="landing-header">
         <div className="landing-header-inner">
-          <Logo size={36} />
+          <Logo size={36} showIcon={false} />
           <div className="landing-actions">
             <Button variant="ghost" onClick={() => navigate('/login')}>
               Login
@@ -29,9 +29,7 @@ export default function LandingPage() {
         <div className="landing-hero-backdrop" />
         <div className="landing-hero-inner">
           <div className="landing-hero-content">
-            <span className="landing-eyebrow">
-              <Icon name="sparkles" size={15} /> AI-powered travel companion
-            </span>
+            <span className="landing-eyebrow">AI-powered travel companion</span>
             <h1 className="landing-brand-title">ROYAL TOURS</h1>
             <p className="landing-tagline">
               Plan Smart. Explore More. Travel Safe.
@@ -70,7 +68,7 @@ export default function LandingPage() {
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div className="footer-left">
-            <Logo size={30} />
+            <Logo size={30} showIcon={false} />
             <span className="footer-note">Plan Smart. Explore More. Travel Safe.</span>
           </div>
           <div className="footer-right">

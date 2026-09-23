@@ -252,7 +252,7 @@ export default function CreateAccountPage() {
   return (
     <div className="auth-page auth-page--login">
       <LoginBackgroundAnimation />
-      <div className="auth-brand"><Logo size={36} /></div>
+      <div className="auth-brand"><Logo size={36} showIcon={false} /></div>
       <div className="auth-card">
         <h1 className="auth-title">Create your account</h1>
         <p className="auth-subtitle">Join ROYAL TOURS and start your journey.</p>
