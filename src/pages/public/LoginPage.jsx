@@ -198,7 +198,7 @@ export default function LoginPage() {
         )}
       </div>
       <p className="auth-back">
-        <Link to="/" className="link"><Icon name="arrow-left" size={14} /> Back to home</Link>
+        <Link to="/" className="link">← Back to home</Link>
       </p>
     </div>
   );

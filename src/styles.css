@@ -1055,13 +1055,31 @@ textarea.trans-textarea:focus {
   text-align: center;
 }
 .auth-brand .logo-text-royal {
-  font-size: 26px;
+  font-family: 'Cinzel', 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  font-weight: 800;
+  font-size: 38px;
   letter-spacing: 0.08em;
+  line-height: 1.05;
+  background: linear-gradient(135deg, #FFF3B0 0%, #FFD700 35%, #F59E0B 75%, #D97706 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #F59E0B;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 .auth-brand .logo-text-tours {
-  font-size: 13.5px;
-  letter-spacing: 0.36em;
-  margin-top: 2px;
+  font-family: 'Cinzel', 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.44em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #D97706;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+  margin-top: 4px;
 }
 .auth-card {
   width: 100%;
@@ -1122,11 +1140,12 @@ textarea.trans-textarea:focus {
     margin-bottom: 18px;
   }
   .auth-brand .logo-text-royal {
-    font-size: 22.5px;
+    font-size: 28px;
   }
   .auth-brand .logo-text-tours {
-    font-size: 12px;
-    letter-spacing: 0.32em;
+    font-size: 13px;
+    letter-spacing: 0.38em;
+    margin-top: 2px;
   }
   .auth-card {
     padding: 26px 18px;
@@ -4145,8 +4164,8 @@ textarea.trans-textarea:focus {
 }
 
 .landing-header .logo.logo-no-icon { gap: 0; }
-.landing-header .logo-text-royal { font-size: 24px; letter-spacing: 0.07em; }
-.landing-header .logo-text-tours { font-size: 13px; letter-spacing: 0.34em; margin-top: 1.5px; }
+.landing-header .logo-text-royal { font-size: 26px; letter-spacing: 0.08em; }
+.landing-header .logo-text-tours { font-size: 13.5px; letter-spacing: 0.36em; margin-top: 2px; }
 
 .landing-footer .logo.logo-no-icon { gap: 0; }
 .landing-footer .logo-text-royal { font-size: 20.5px; letter-spacing: 0.06em; }
