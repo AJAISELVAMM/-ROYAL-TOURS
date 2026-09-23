@@ -20,7 +20,7 @@ export const LANGUAGES = [
   { code: 'as', label: 'Assamese (অসমীয়া)' }
 ];
 
-export async function translate(text, targetCode, sourceCode = 'en') {
+export async function translate(text, targetCode, sourceCode = 'en', options = {}) {
   if (!text?.trim()) return '';
   if (targetCode === sourceCode) return text;
 
@@ -28,7 +28,7 @@ export async function translate(text, targetCode, sourceCode = 'en') {
     text,
     sourceLanguage: sourceCode,
     targetLanguage: targetCode
-  });
+  }, { signal: options?.signal });
   return data.translatedText || data.translated || '';
 }
 

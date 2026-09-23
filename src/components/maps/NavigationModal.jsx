@@ -10,6 +10,7 @@ import Button from '../common/Button.jsx';
 import Icon from '../common/Icon.jsx';
 import { useLocation } from '../../context/LocationContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
+import { api } from '../../services/api.js';
 import * as transportService from '../../services/transportService.js';
 import { checkOffRoute, distanceMeters, formatDistance, formatDuration } from '../../utils/geoUtils.js';
 
@@ -21,53 +22,151 @@ const MODES = [
 
 const ROUTE_RECALCULATION_DISTANCE = 50; // meters threshold for off-route recalculation
 const RECALC_COOLDOWN_MS = 6000; // minimum interval between auto-recalculations
+const ARRIVAL_THRESHOLD_METERS = 30; // meters radius to mark destination reached
+
+function isValidCoordinate(lat, lon) {
+  if (lat == null || lon == null) return false;
+  const nLat = Number(lat);
+  const nLon = Number(lon);
+  if (isNaN(nLat) || isNaN(nLon)) return false;
+  if (nLat === 0 && nLon === 0) return false;
+  return nLat >= -90 && nLat <= 90 && nLon >= -180 && nLon <= 180;
+}
 
 export default function NavigationModal({
   isOpen,
   onClose,
   destination = null, // { name, address, latitude, longitude, category }
-  initialMode = 'driving-car'
+  initialMode = 'driving-car',
+  initialRoute = null,
+  initialOrigin = null
 }) {
   const { push, dismiss } = useToast();
   const { currentLocation, setSelectedLocation } = useLocation();
 
   const [mode, setMode] = useState(initialMode);
-  const [route, setRoute] = useState(null);
+  const [route, setRoute] = useState(initialRoute || null);
   const [navState, setNavState] = useState('IDLE'); // IDLE | REQUESTING_LOCATION | CALCULATING_ROUTE | NAVIGATING | RECALCULATING | ARRIVED | EXITED
   const [error, setError] = useState(null);
   const [isOffRoute, setIsOffRoute] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [liveLocation, setLiveLocation] = useState(null);
+  const [safetyMarkers, setSafetyMarkers] = useState([]);
 
   const routeRequestInProgressRef = useRef(false);
   const abortControllerRef = useRef(null);
+  const safetyAbortCtrlRef = useRef(null);
+  const watchIdRef = useRef(null);
   const lastRecalcCoordRef = useRef(null);
   const lastRecalcTimeRef = useRef(0);
   const isMountedRef = useRef(true);
 
+  // Stop GPS watcher helper
+  const stopGpsWatcher = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      if (typeof navigator !== 'undefined' && navigator.geolocation?.clearWatch) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      watchIdRef.current = null;
+    }
+  }, []);
+
+  // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      stopGpsWatcher();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      if (safetyAbortCtrlRef.current) {
+        safetyAbortCtrlRef.current.abort();
+      }
       dismiss('navigation-recalculate');
+      dismiss('navigation-arrival');
     };
-  }, [dismiss]);
+  }, [dismiss, stopGpsWatcher]);
 
+  // Determine best available current coordinates
+  const activeUserLat = liveLocation?.latitude ?? (isValidCoordinate(currentLocation?.latitude, currentLocation?.longitude) ? currentLocation.latitude : initialOrigin?.latitude ?? initialOrigin?.lat);
+  const activeUserLon = liveLocation?.longitude ?? (isValidCoordinate(currentLocation?.latitude, currentLocation?.longitude) ? currentLocation.longitude : initialOrigin?.longitude ?? initialOrigin?.lon);
+
+  const activeUserLocation = (isValidCoordinate(activeUserLat, activeUserLon)) ? {
+    latitude: Number(activeUserLat),
+    longitude: Number(activeUserLon),
+    accuracy: liveLocation?.accuracy ?? currentLocation?.accuracy ?? null,
+    heading: liveLocation?.heading ?? currentLocation?.heading ?? null,
+    speed: liveLocation?.speed ?? currentLocation?.speed ?? null,
+    timestamp: liveLocation?.timestamp ?? currentLocation?.timestamp ?? Date.now()
+  } : null;
+
+  // Continuous live GPS watchPosition tracking while modal is open
+  useEffect(() => {
+    if (!isOpen) {
+      stopGpsWatcher();
+      setLiveLocation(null);
+      return;
+    }
+
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      console.warn('[NavigationModal] Geolocation API not available in browser.');
+      return;
+    }
+
+    // Start live GPS tracking with high accuracy
+    stopGpsWatcher();
+    try {
+      const id = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (!isMountedRef.current) return;
+          const { latitude, longitude, accuracy, heading, speed } = pos.coords;
+          if (isValidCoordinate(latitude, longitude)) {
+            setLiveLocation({
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+              accuracy: accuracy ? Math.round(accuracy) : null,
+              heading: heading ?? null,
+              speed: speed ?? null,
+              timestamp: pos.timestamp || Date.now()
+            });
+          }
+        },
+        (err) => {
+          console.warn('[NavigationModal:watchPosition]', err?.message);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 3000,
+          timeout: 10000
+        }
+      );
+      watchIdRef.current = id;
+    } catch (err) {
+      console.warn('[NavigationModal] watchPosition failed to start:', err?.message);
+    }
+
+    return () => {
+      stopGpsWatcher();
+    };
+  }, [isOpen, stopGpsWatcher]);
+
+  // Route calculation
   const calculateRoute = useCallback(async (selectedMode = mode, isRecalculation = false) => {
-    if (!destination || destination.latitude == null || destination.longitude == null) {
-      setError('Destination coordinates are missing.');
+    const destLat = destination?.latitude;
+    const destLon = destination?.longitude;
+
+    if (!isValidCoordinate(destLat, destLon)) {
+      setError('Destination coordinates are invalid or missing.');
       return;
     }
 
-    if (currentLocation.latitude == null || currentLocation.longitude == null) {
+    if (!isValidCoordinate(activeUserLat, activeUserLon)) {
       setNavState('REQUESTING_LOCATION');
-      setError('Waiting for live device GPS. Please ensure location is enabled.');
+      setError('Waiting for live device GPS. Please ensure location access is enabled.');
       return;
     }
 
-    // Request Lock: prevent concurrent or overlapping route requests
     if (routeRequestInProgressRef.current) {
       return;
     }
@@ -76,7 +175,6 @@ export default function NavigationModal({
     setNavState(isRecalculation ? 'RECALCULATING' : 'CALCULATING_ROUTE');
     setError(null);
 
-    // Cancel any in-flight route request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -87,14 +185,14 @@ export default function NavigationModal({
       setIsOffRoute(true);
       push('Recalculating route from current location…', 'info', {
         id: 'navigation-recalculate',
-        duration: 8000
+        duration: 5000
       });
     }
 
     try {
       const data = await transportService.getRoute({
-        from: { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
-        to: { latitude: destination.latitude, longitude: destination.longitude },
+        from: { latitude: Number(activeUserLat), longitude: Number(activeUserLon) },
+        to: { latitude: Number(destLat), longitude: Number(destLon) },
         mode: selectedMode,
         signal: abortCtrl.signal
       });
@@ -106,7 +204,7 @@ export default function NavigationModal({
       setIsOffRoute(false);
       setNavState('NAVIGATING');
 
-      lastRecalcCoordRef.current = { lat: currentLocation.latitude, lon: currentLocation.longitude };
+      lastRecalcCoordRef.current = { lat: Number(activeUserLat), lon: Number(activeUserLon) };
       lastRecalcTimeRef.current = Date.now();
 
       if (isRecalculation) {
@@ -117,13 +215,13 @@ export default function NavigationModal({
       }
     } catch (err) {
       if (err.name === 'AbortError' || abortCtrl.signal.aborted) {
-        return; // Request was cleanly cancelled
+        return;
       }
       if (!isMountedRef.current) return;
 
       const msg = err?.message || 'Could not calculate real road route.';
       setError(msg);
-      setNavState('NAVIGATING'); // Keep navigating with existing route if any
+      setNavState('NAVIGATING');
       if (isRecalculation) {
         push('Unable to recalculate route. Continuing with existing path.', 'warning', {
           id: 'navigation-recalculate',
@@ -135,9 +233,9 @@ export default function NavigationModal({
     } finally {
       routeRequestInProgressRef.current = false;
     }
-  }, [destination, currentLocation.latitude, currentLocation.longitude, mode, push]);
+  }, [destination?.latitude, destination?.longitude, activeUserLat, activeUserLon, mode, push]);
 
-  // Initial route calculation when modal opens or destination changes
+  // Initial setup when modal opens
   useEffect(() => {
     if (isOpen && destination) {
       setSelectedLocation({
@@ -146,21 +244,89 @@ export default function NavigationModal({
         name: destination.name,
         address: destination.address
       });
-      calculateRoute(mode, false);
+
+      // If initialRoute is provided and contains coordinates, immediately activate navigation!
+      const initialCoords = initialRoute?.geometry?.coordinates;
+      if (Array.isArray(initialCoords) && initialCoords.length > 0) {
+        setRoute(initialRoute);
+        setCurrentStepIndex(0);
+        setIsOffRoute(false);
+        setNavState('NAVIGATING');
+        setError(null);
+      } else {
+        // Calculate route from live position to destination
+        calculateRoute(mode, false);
+      }
     } else {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      if (safetyAbortCtrlRef.current) {
+        safetyAbortCtrlRef.current.abort();
+      }
+      stopGpsWatcher();
       routeRequestInProgressRef.current = false;
       setRoute(null);
       setError(null);
       setIsOffRoute(false);
       setNavState('IDLE');
+      setSafetyMarkers([]);
       dismiss('navigation-recalculate');
     }
-  }, [isOpen, destination]);
+  }, [isOpen, destination, initialRoute, stopGpsWatcher, setSelectedLocation, dismiss]);
 
-  // Handle transport mode change
+  // Non-blocking asynchronous nearby safety facility discovery
+  useEffect(() => {
+    if (!isOpen || navState === 'IDLE' || navState === 'CALCULATING_ROUTE') return;
+
+    const queryLat = destination?.latitude ?? activeUserLat;
+    const queryLon = destination?.longitude ?? activeUserLon;
+    if (!isValidCoordinate(queryLat, queryLon)) return;
+
+    if (safetyAbortCtrlRef.current) {
+      safetyAbortCtrlRef.current.abort();
+    }
+    const ctrl = new AbortController();
+    safetyAbortCtrlRef.current = ctrl;
+
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+
+    (async () => {
+      try {
+        const res = await api.get(`/safety/map?lat=${queryLat}&lon=${queryLon}&radius=5000`, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!isMountedRef.current) return;
+        const facilities = res?.facilities || res?.items || (Array.isArray(res) ? res : []);
+        if (Array.isArray(facilities) && facilities.length > 0) {
+          const markers = facilities
+            .map((f, i) => ({
+              id: f.id || `safe-${i}`,
+              latitude: Number(f.latitude || f.lat),
+              longitude: Number(f.longitude || f.lon),
+              name: f.name || f.title || 'Safety Facility',
+              category: (f.category || f.type || 'HOSPITAL').toUpperCase(),
+              phone: f.phone || null,
+              address: f.address || null
+            }))
+            .filter((m) => isValidCoordinate(m.latitude, m.longitude));
+          setSafetyMarkers(markers);
+        }
+      } catch (err) {
+        clearTimeout(timer);
+        // Do NOT fail navigation if safety facilities lookup fails or times out
+        console.warn('[NavigationModal:SafetyFacilities] Non-blocking discovery ended:', err?.message);
+      }
+    })();
+
+    return () => {
+      clearTimeout(timer);
+      if (safetyAbortCtrlRef.current) {
+        safetyAbortCtrlRef.current.abort();
+      }
+    };
+  }, [isOpen, navState, destination?.latitude, destination?.longitude, activeUserLat, activeUserLon]);
+
+  // Mode change
   function handleModeChange(newMode) {
     setMode(newMode);
     calculateRoute(newMode, false);
@@ -168,7 +334,7 @@ export default function NavigationModal({
 
   // Off-route monitoring with deviation threshold and cooldown protection
   useEffect(() => {
-    if (!isOpen || !route || currentLocation.latitude == null || currentLocation.longitude == null) {
+    if (!isOpen || !route || !isValidCoordinate(activeUserLat, activeUserLon)) {
       return;
     }
 
@@ -180,8 +346,8 @@ export default function NavigationModal({
     if (!coords || coords.length === 0) return;
 
     const off = checkOffRoute(
-      currentLocation.latitude,
-      currentLocation.longitude,
+      Number(activeUserLat),
+      Number(activeUserLon),
       coords,
       ROUTE_RECALCULATION_DISTANCE,
       true
@@ -193,28 +359,54 @@ export default function NavigationModal({
       const lastCoord = lastRecalcCoordRef.current;
 
       const movedSinceLastRecalc = lastCoord
-        ? distanceMeters(lastCoord.lat, lastCoord.lon, currentLocation.latitude, currentLocation.longitude)
+        ? distanceMeters(lastCoord.lat, lastCoord.lon, Number(activeUserLat), Number(activeUserLon))
         : Infinity;
 
-      // Only recalculate if off route AND cooldown elapsed AND moved significantly
       if (now - lastTime > RECALC_COOLDOWN_MS && movedSinceLastRecalc > 30) {
         calculateRoute(mode, true);
       }
     } else if (isOffRoute) {
       setIsOffRoute(false);
     }
-  }, [isOpen, currentLocation.latitude, currentLocation.longitude, route, isOffRoute, navState, mode, calculateRoute]);
+  }, [isOpen, activeUserLat, activeUserLon, route, isOffRoute, navState, mode, calculateRoute]);
 
-  // Check arrival threshold (< 25 meters from destination)
+  // Check arrival threshold (< 30 meters from destination)
   useEffect(() => {
-    if (isOpen && destination?.latitude != null && currentLocation.latitude != null && navState === 'NAVIGATING') {
-      const dist = distanceMeters(currentLocation.latitude, currentLocation.longitude, destination.latitude, destination.longitude);
-      if (dist < 25 && navState !== 'ARRIVED') {
+    if (
+      isOpen &&
+      destination?.latitude != null &&
+      isValidCoordinate(activeUserLat, activeUserLon) &&
+      navState === 'NAVIGATING'
+    ) {
+      const dist = distanceMeters(
+        Number(activeUserLat),
+        Number(activeUserLon),
+        Number(destination.latitude),
+        Number(destination.longitude)
+      );
+
+      if (dist < ARRIVAL_THRESHOLD_METERS && navState !== 'ARRIVED') {
         setNavState('ARRIVED');
+        stopGpsWatcher();
         push('You have arrived at your destination!', 'success', { id: 'navigation-arrival' });
       }
     }
-  }, [isOpen, destination, currentLocation.latitude, currentLocation.longitude, navState, push]);
+  }, [isOpen, destination, activeUserLat, activeUserLon, navState, push, stopGpsWatcher]);
+
+  // Clean exit handler
+  const handleExitNavigation = useCallback(() => {
+    stopGpsWatcher();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    if (safetyAbortCtrlRef.current) {
+      safetyAbortCtrlRef.current.abort();
+    }
+    setNavState('IDLE');
+    setRoute(null);
+    setSafetyMarkers([]);
+    onClose();
+  }, [stopGpsWatcher, onClose]);
 
   if (!isOpen || !destination) return null;
 
@@ -223,8 +415,13 @@ export default function NavigationModal({
   const nextStep = steps[currentStepIndex + 1] || null;
   const isLoading = navState === 'CALCULATING_ROUTE' || navState === 'RECALCULATING';
 
+  // Compute live remaining distance to destination
+  const liveRemainingDistKm = (isValidCoordinate(activeUserLat, activeUserLon) && isValidCoordinate(destination.latitude, destination.longitude))
+    ? (distanceMeters(Number(activeUserLat), Number(activeUserLon), Number(destination.latitude), Number(destination.longitude)) / 1000)
+    : (route?.distanceKm || 0);
+
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
+    <div className="modal-overlay" onClick={handleExitNavigation} style={{ zIndex: 1100 }}>
       <div
         className="modal modal-lg"
         onClick={(e) => e.stopPropagation()}
@@ -246,7 +443,7 @@ export default function NavigationModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleExitNavigation}
             style={{ background: 'none', border: 'none', color: '#e2d9f5', cursor: 'pointer', display: 'flex', padding: '6px' }}
             aria-label="Close"
           >
@@ -290,7 +487,7 @@ export default function NavigationModal({
             {route && (
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center', background: 'var(--purple-50)', padding: '6px 14px', borderRadius: '10px' }}>
                 <span style={{ fontSize: '13.5px', color: 'var(--purple-deep)', fontWeight: 700 }}>
-                  📍 {formatDistance(route.distanceKm)}
+                  📍 {formatDistance(liveRemainingDistKm)}
                 </span>
                 <span style={{ fontSize: '13.5px', color: 'var(--purple-deep)', fontWeight: 700 }}>
                   ⏱️ ~{formatDuration(route.durationMinutes)}
@@ -302,17 +499,20 @@ export default function NavigationModal({
           {/* Satellite Map Container */}
           <div style={{ height: '380px', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
             <RealMap
-              currentLocation={currentLocation}
+              currentLocation={activeUserLocation || currentLocation}
               selectedLocation={{
-                latitude: destination.latitude,
-                longitude: destination.longitude,
+                latitude: Number(destination.latitude),
+                longitude: Number(destination.longitude),
                 name: destination.name,
                 address: destination.address
               }}
+              markers={safetyMarkers}
               route={route}
               layer="satellite"
               height="100%"
               isLoading={isLoading}
+              loadingTitle={navState === 'RECALCULATING' ? 'Recalculating route…' : 'Calculating road route (OSRM)…'}
+              loadingSubtitle={navState === 'RECALCULATING' ? 'Recalculating from your current GPS position…' : 'Connecting to live road navigation network…'}
               loadingLabel={navState === 'RECALCULATING' ? 'Recalculating route from current location…' : 'Calculating real road route (OSRM)…'}
               isOffRoute={isOffRoute}
               onRecalculateRoute={() => calculateRoute(mode, true)}
@@ -392,7 +592,7 @@ export default function NavigationModal({
             <Button size="sm" variant="ghost" onClick={() => calculateRoute(mode, false)} icon="refresh-cw" disabled={isLoading}>
               Recalculate
             </Button>
-            <Button size="sm" variant="primary" onClick={onClose}>
+            <Button size="sm" variant="primary" onClick={handleExitNavigation}>
               Exit Navigation
             </Button>
           </div>

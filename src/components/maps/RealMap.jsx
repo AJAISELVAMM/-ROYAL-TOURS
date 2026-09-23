@@ -168,9 +168,11 @@ function MapViewController({ center, zoom, bounds, autoFit = false, locateTrigge
   useEffect(() => {
     if (!map) return;
 
-    // Invalidate immediately and after transitions (drawer opening/closing, initial render)
-    const t1 = setTimeout(() => map.invalidateSize(), 100);
+    // Invalidate immediately and after transitions (modal/drawer opening/closing, initial render)
+    const t0 = setTimeout(() => map.invalidateSize(), 50);
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
     const t2 = setTimeout(() => map.invalidateSize(), 350);
+    const t3 = setTimeout(() => map.invalidateSize(), 650);
 
     const onResize = () => {
       map.invalidateSize();
@@ -191,8 +193,10 @@ function MapViewController({ center, zoom, bounds, autoFit = false, locateTrigge
     } catch {}
 
     return () => {
+      clearTimeout(t0);
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('orientationchange', onResize);
       if (ro) ro.disconnect();
@@ -216,8 +220,8 @@ export default function RealMap({
   interactive = true,
   isLoading = false,
   loadingLabel = null,
-  loadingTitle = 'Finding nearby safety facilities...',
-  loadingSubtitle = 'Searching hospitals, police stations, pharmacies and other emergency services around you.',
+  loadingTitle = null,
+  loadingSubtitle = null,
   loadingBottomText = 'Please wait a moment...',
   isOffRoute = false,
   onRecalculateRoute = null,
@@ -547,8 +551,8 @@ export default function RealMap({
       {/* Centered Map Loading Overlay Matching Reference */}
       {isLoading && (
         <MapLoadingOverlay
-          title={loadingTitle}
-          subtitle={loadingSubtitle || loadingLabel}
+          title={loadingTitle || (route ? 'Calculating road route…' : 'Finding nearby safety facilities...')}
+          subtitle={loadingLabel || loadingSubtitle || (route ? 'Connecting to live road network…' : 'Searching hospitals, police stations, pharmacies and other emergency services around you.')}
           bottomText={loadingBottomText}
         />
       )}

@@ -481,11 +481,13 @@ export default function TransportView() {
           isOpen={isNavigatingModalOpen}
           onClose={() => setIsNavigatingModalOpen(false)}
           destination={{
-            latitude: route.destination.lat,
-            longitude: route.destination.lon,
+            latitude: Number(route.destination.lat ?? route.destination.latitude),
+            longitude: Number(route.destination.lon ?? route.destination.longitude),
             name: route.destination.label || toLocation
           }}
           initialMode={mode}
+          initialRoute={route}
+          initialOrigin={route.origin || (fromLocationCoords ? { latitude: fromLocationCoords.latitude, longitude: fromLocationCoords.longitude } : null)}
         />
       )}
     </div>

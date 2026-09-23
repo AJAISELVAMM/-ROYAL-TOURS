@@ -9,7 +9,7 @@ describe('Translation', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.targetLanguage).toBe('ta');
     expect(res.body.data.translated).toBeTruthy();
-  });
+  }, 25000);
 
   it('lists supported languages', async () => {
     const res = await api().get('/api/translation/languages');

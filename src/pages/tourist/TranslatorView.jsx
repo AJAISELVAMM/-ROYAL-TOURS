@@ -76,7 +76,7 @@ export default function TranslatorView() {
     setError(null);
 
     try {
-      const result = await translationService.translate(text, targetLang, sourceLang);
+      const result = await translationService.translate(text, targetLang, sourceLang, { signal: abortCtrl.signal });
       setTranslatedText(result || '');
     } catch (err) {
       if (err.name === 'AbortError' || abortCtrl.signal.aborted) return;
