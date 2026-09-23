@@ -752,22 +752,11 @@ textarea.trans-textarea:focus {
    App shell layout (sidebar + topbar + page)
    ============================================================================ */
 
-.app-shell {
-  display: flex;
-  min-height: 100vh;
-  position: relative;
-  background-image: url('/images/dashboard-travel-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
+.app-shell { display: flex; min-height: 100vh; }
 
 .sidebar {
   width: var(--sidebar-w);
-  background: rgba(30, 16, 51, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--sidebar-bg);
   color: #cfc4e8;
   display: flex;
   flex-direction: column;
@@ -894,23 +883,12 @@ textarea.trans-textarea:focus {
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 13px 26px;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  background: #fff;
+  border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 500;
 }
 .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.topbar-title {
-  font-weight: 750;
-  font-size: 22px;
-  color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
+.topbar-title { font-weight: 650; font-size: 16.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .topbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .topbar-user { display: flex; align-items: center; gap: 9px; }
 .topbar-username { font-weight: 600; font-size: 14px; }
@@ -3414,11 +3392,6 @@ textarea.trans-textarea:focus {
 /* Mobile / tablet drawer */
 @media (max-width: 768px) {
   :root { --sidebar-w: 256px; }
-
-  .app-shell {
-    background-attachment: scroll;
-    background-position: center top;
-  }
 
   .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; width: 256px; }
   .drawer-overlay.visible { display: block; }
