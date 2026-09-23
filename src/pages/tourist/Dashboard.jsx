@@ -70,14 +70,14 @@ export default function Dashboard() {
   // Dynamic live location destination with robust fallbacks
   const featuredDestination = useMemo(() => {
     if (liveDestination) return liveDestination;
+    if (currentLocation?.latitude != null && currentLocation?.longitude != null) {
+      return upcomingTrip?.destination || 'Current Location';
+    }
     if (permissionStatus === 'denied') {
       return upcomingTrip?.destination || 'Location unavailable';
     }
-    if (currentLocation?.latitude == null || currentLocation?.longitude == null) {
-      if (permissionStatus === 'prompt' || !permissionStatus) {
-        return upcomingTrip?.destination || 'Locating…';
-      }
-      return upcomingTrip?.destination || 'Location unavailable';
+    if (permissionStatus === 'prompt' || !permissionStatus) {
+      return upcomingTrip?.destination || 'Locating…';
     }
     return upcomingTrip?.destination || 'Location unavailable';
   }, [liveDestination, permissionStatus, currentLocation?.latitude, currentLocation?.longitude, upcomingTrip?.destination]);
@@ -91,7 +91,7 @@ export default function Dashboard() {
     const last = lastGeocodedCoordRef.current;
     if (last.lat != null && last.lon != null) {
       const movedM = distanceMeters(last.lat, last.lon, lat, lon);
-      if (movedM < 500) {
+      if (movedM < 400 && liveDestination) {
         return;
       }
     }
@@ -105,12 +105,14 @@ export default function Dashboard() {
           setLiveDestination(res.destination);
         } else if (res && (res.locality || res.city || res.district)) {
           setLiveDestination(res.locality || res.city || res.district);
+        } else if (res && res.displayName) {
+          setLiveDestination(res.displayName.split(',')[0].trim());
         }
       })
       .catch(() => {
         // Graceful fallback handled in featuredDestination
       });
-  }, [currentLocation?.latitude, currentLocation?.longitude]);
+  }, [currentLocation?.latitude, currentLocation?.longitude, liveDestination]);
 
   // Saved places from localStorage
   const savedPlacesCount = useMemo(() => {
@@ -137,17 +139,19 @@ export default function Dashboard() {
 
   // Load weather, places, hotels, restaurants, emergency facilities
   useEffect(() => {
-    const lat = currentLocation?.latitude != null ? currentLocation.latitude : 11.0168;
-    const lon = currentLocation?.longitude != null ? currentLocation.longitude : 76.9558;
+    const hasRealGps = currentLocation?.latitude != null && currentLocation?.longitude != null;
+    const lat = hasRealGps ? currentLocation.latitude : 11.0168;
+    const lon = hasRealGps ? currentLocation.longitude : 76.9558;
 
     const last = lastCatalogCoordRef.current;
     if (last.lat != null && last.lon != null) {
       const movedM = distanceMeters(last.lat, last.lon, lat, lon);
-      if (movedM < 500 && nearbyPlaces.length > 0) {
+      // If we previously loaded with default coords and now have real GPS, always reload
+      if (last.isRealGps === hasRealGps && movedM < 500 && nearbyPlaces.length > 0) {
         return;
       }
     }
-    lastCatalogCoordRef.current = { lat, lon };
+    lastCatalogCoordRef.current = { lat, lon, isRealGps: hasRealGps };
 
     setWeatherLoading(true);
     weatherService
@@ -226,7 +230,7 @@ export default function Dashboard() {
             : (p.distanceKm ?? 9999);
           return { ...p, calculatedDistance: d };
         })
-        .filter((p) => lat == null || p.calculatedDistance <= 50)
+        .filter((p) => lat == null || p.calculatedDistance <= 75)
         .sort((a, b) => a.calculatedDistance - b.calculatedDistance);
 
       sortedPlaces.forEach((p) => {

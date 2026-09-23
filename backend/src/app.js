@@ -45,6 +45,11 @@ app.use(
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
+// Fast root health check for Render cold-start and container health monitors.
+app.get('/health', (_req, res) => {
+  res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Public health endpoint — returns success/healthy without auth.
 app.get('/api/health', async (_req, res) => {
   let db = 'connected';

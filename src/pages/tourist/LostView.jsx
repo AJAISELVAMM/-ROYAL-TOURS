@@ -57,18 +57,20 @@ export default function LostView() {
           ? data
           : (data?.facilities || data?.items || (data?.facility ? [data.facility] : []));
         if (!list || list.length === 0) {
-          safetyService.getSafetyMap(lat, lon).then((sData) => {
+          return safetyService.getSafetyMap(lat, lon).then((sData) => {
             if (sData?.facilities?.length) setSafePoints(sData.facilities);
-          }).catch(() => {}).finally(() => setLoading(false));
+          });
         } else {
           setSafePoints(list);
-          setLoading(false);
         }
       })
       .catch(() => {
-        safetyService.getSafetyMap(lat, lon).then((sData) => {
+        return safetyService.getSafetyMap(lat, lon).then((sData) => {
           if (sData?.facilities?.length) setSafePoints(sData.facilities);
-        }).catch(() => {}).finally(() => setLoading(false));
+        }).catch(() => {});
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, [currentLocation?.latitude, currentLocation?.longitude, permissionStatus]);
 
@@ -254,9 +256,17 @@ export default function LostView() {
                     </Button>
                   </div>
                 ))
-              ) : (
+              ) : loading ? (
                 <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                   Loading nearby safe zones…
+                </div>
+              ) : permissionStatus === 'denied' ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  Please enable device location permission to discover nearby safe zones.
+                </div>
+              ) : (
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  No safe zones found in immediate area. Dial 100 (Police) or 108 (Ambulance) for instant assistance.
                 </div>
               )}
             </div>

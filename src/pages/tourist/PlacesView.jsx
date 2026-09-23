@@ -28,24 +28,24 @@ export default function PlacesView() {
   const effectiveLat = discoverLocation?.latitude ?? currentLocation.latitude;
   const effectiveLon = discoverLocation?.longitude ?? currentLocation.longitude;
 
-  // Immediately clear stale results when location changes
-  useEffect(() => {
-    setPlaces([]);
-    setError(null);
-    setLoading(true);
-  }, [effectiveLat, effectiveLon]);
+  // Stabilize coordinates to ~100m grid to prevent continuous re-fetch loops on micro GPS jitter
+  const coordKey = (effectiveLat != null && effectiveLon != null)
+    ? `${effectiveLat.toFixed(3)},${effectiveLon.toFixed(3)}`
+    : null;
 
   useEffect(() => {
     let active = true;
     const abortCtrl = new AbortController();
 
+    if (effectiveLat == null || effectiveLon == null) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     const handler = setTimeout(() => {
-      if (effectiveLat == null || effectiveLon == null) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      setError(null);
       catalogService
         .list('places', {
           latitude: effectiveLat,
@@ -57,21 +57,24 @@ export default function PlacesView() {
         .then((items) => {
           if (!active) return;
           setPlaces(items || []);
-          setLoading(false);
         })
         .catch((err) => {
           if (!active || err.name === 'AbortError') return;
           setError(err.message || 'Could not load nearby places.');
-          setLoading(false);
+        })
+        .finally(() => {
+          if (active) {
+            setLoading(false);
+          }
         });
-    }, 200);
+    }, 250);
 
     return () => {
       active = false;
       clearTimeout(handler);
       abortCtrl.abort();
     };
-  }, [effectiveLat, effectiveLon, category, query]);
+  }, [coordKey, category, query]);
 
   function handleSelectSuggestion(suggestion) {
     if (suggestion.latitude && suggestion.longitude) {

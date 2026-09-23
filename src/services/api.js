@@ -85,29 +85,57 @@ export async function fetchWithRetry(url, options = {}, retries = 3, delay = 200
   }
 }
 
+let refreshPromise = null;
+
 async function tryRefresh() {
-  if (!refreshToken) {
-    const stored = readStoredTokens();
-    if (stored.refreshToken) {
-      refreshToken = stored.refreshToken;
-      accessToken = stored.accessToken;
-    } else {
-      return false;
-    }
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  refreshPromise = (async () => {
+    try {
+      if (!refreshToken) {
+        const stored = readStoredTokens();
+        if (stored.refreshToken) {
+          refreshToken = stored.refreshToken;
+          accessToken = stored.accessToken;
+        } else {
+          return false;
+        }
+      }
+
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success || !json?.data?.accessToken) {
+        return false;
+      }
+
+      setTokens({
+        accessToken: json.data.accessToken,
+        refreshToken: json.data.refreshToken || refreshToken
+      });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+export async function pingBackendHealth() {
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken })
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.success) return false;
-    setTokens({
-      accessToken: json.data.accessToken,
-      refreshToken: json.data.refreshToken
-    });
-    return true;
+    const rootUrl = envApiUrl ? envApiUrl.replace(/\/api\/?$/, '') : '';
+    const target = rootUrl ? `${rootUrl}/health` : '/health';
+    const res = await fetch(target, { method: 'GET', signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined });
+    return res.ok;
   } catch {
     return false;
   }
@@ -128,8 +156,8 @@ export async function apiFetch(path, { method = 'GET', body, auth = true, signal
     signal
   });
 
-  // Attempt a single transparent refresh + retry on 401.
-  if (res.status === 401 && auth && refreshToken) {
+  // Attempt a single transparent deduplicated refresh + retry on 401.
+  if (res.status === 401 && auth && (refreshToken || readStoredTokens().refreshToken)) {
     const ok = await tryRefresh();
     if (ok) {
       res = await fetchWithRetry(API_BASE + path, {
