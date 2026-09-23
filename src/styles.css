@@ -703,6 +703,7 @@ textarea.trans-textarea:focus {
   letter-spacing: 0.06em;
   background: linear-gradient(135deg, #FFF3B0 0%, #FFD700 35%, #F59E0B 75%, #D97706 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   color: #F59E0B;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
@@ -715,6 +716,7 @@ textarea.trans-textarea:focus {
   text-transform: uppercase;
   background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   color: #D97706;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
@@ -723,12 +725,14 @@ textarea.trans-textarea:focus {
 .logo-light .logo-text-royal {
   background: linear-gradient(135deg, #FFF7CC 0%, #FFD700 40%, #FBBF24 80%, #F59E0B 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   color: #FBBF24;
 }
 .logo-light .logo-text-tours {
   background: linear-gradient(135deg, #FEF3C7 0%, #FCD34D 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   color: #FCD34D;
 }
@@ -739,6 +743,7 @@ textarea.trans-textarea:focus {
   letter-spacing: 0.32em;
   background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
