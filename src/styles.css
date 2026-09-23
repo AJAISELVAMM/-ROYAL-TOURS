@@ -46,7 +46,14 @@
 
 * { box-sizing: border-box; }
 
-html, body, #root { height: 100%; }
+html, body, #root {
+  min-height: 100%;
+}
+
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
 
 body {
   margin: 0;
@@ -57,15 +64,17 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
-h1, h2, h3, h4 { margin: 0; font-weight: 650; letter-spacing: -0.01em; color: var(--text); }
-p { margin: 0; }
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 650; letter-spacing: -0.01em; color: var(--text); overflow-wrap: break-word; }
+p { margin: 0; overflow-wrap: break-word; }
 a { color: var(--purple); text-decoration: none; }
 a:hover { text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
-input, select, textarea { font-family: inherit; font-size: 14.5px; color: var(--text); }
-img { max-width: 100%; display: block; }
+input, select, textarea { font-family: inherit; font-size: 14.5px; color: var(--text); box-sizing: border-box; }
+img { max-width: 100%; height: auto; display: block; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #d3dae3; border-radius: 8px; }
@@ -366,7 +375,8 @@ img { max-width: 100%; display: block; }
 }
 .field-control:focus-within { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12); }
 .field-control .icon { color: var(--text-faint); }
-.field-control input { border: none; outline: none; width: 100%; padding: 11px 0; background: transparent; }
+.field-control input { border: none; outline: none; width: 100%; min-width: 0; padding: 11px 0; background: transparent; }
+.field-control .field-suffix { font-size: 12px; font-weight: 600; color: var(--purple); padding: 0 4px; white-space: nowrap; flex-shrink: 0; }
 
 input[type="text"], input[type="email"], input[type="password"], input[type="tel"],
 input[type="number"], input[type="time"], input[type="date"], select, textarea {
@@ -378,8 +388,13 @@ input[type="number"], input[type="time"], input[type="date"], select, textarea {
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12); }
-textarea { resize: vertical; }
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
+input[type="tel"]:focus, input[type="number"]:focus, input[type="time"]:focus,
+input[type="date"]:focus, select:focus, textarea:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+textarea { resize: vertical; min-height: 80px; }
 select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px; }
 
 /* Date inputs matching ROYAL TOURS design */
@@ -817,9 +832,9 @@ textarea.trans-textarea:focus {
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 500;
 }
-.topbar-left { display: flex; align-items: center; gap: 12px; }
-.topbar-title { font-weight: 650; font-size: 16.5px; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.topbar-title { font-weight: 650; font-size: 16.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.topbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .topbar-user { display: flex; align-items: center; gap: 9px; }
 .topbar-username { font-weight: 600; font-size: 14px; }
 
@@ -2206,7 +2221,7 @@ textarea.trans-textarea:focus {
 .route-note { color: var(--text-muted); font-size: 13px; margin-top: 14px; }
 
 /* Fare */
-.fare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.fair-fare-grid, .fare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .fare-result { min-height: 300px; }
 .fare-result-body { display: flex; flex-direction: column; gap: 18px; }
 .fare-verdict { display: flex; justify-content: center; padding: 10px 0; }
@@ -2246,6 +2261,94 @@ textarea.trans-textarea:focus {
 .phrase-chip.active { background: var(--purple-50); border-color: var(--lavender); color: var(--purple-deep); }
 
 /* Weather */
+.weather-hero {
+  background: linear-gradient(135deg, var(--purple-deep) 0%, var(--purple) 100%);
+  color: #ffffff;
+  padding: 24px;
+}
+.weather-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.weather-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+.wstat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wstat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wstat-label {
+  display: block;
+  font-size: 11px;
+  opacity: 0.8;
+}
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+.forecast-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 8px;
+}
+.forecast-temps {
+  display: flex;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.f-high { color: var(--text); }
+.f-low { color: var(--text-muted); }
+.weather-recs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+.rec-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+}
+.rec-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--purple-50);
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rec-body strong { font-size: 14px; color: var(--text); }
+.rec-body p { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+
 .weather-current { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .weather-temp { display: flex; flex-direction: column; }
 .weather-big { font-size: 52px; font-weight: 750; letter-spacing: -0.03em; line-height: 1; }
@@ -2327,8 +2430,16 @@ textarea.trans-textarea:focus {
 .place-meta span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 13px; }
 .place-meta .icon { color: var(--amber); }
 .place-meta span:nth-child(2) .icon { color: var(--purple); }
-.place-desc { font-size: 13px; color: var(--text-muted); margin: 10px 0; }
-.place-actions { display: flex; gap: 9px; margin-top: 14px; }
+.place-card-actions, .place-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.place-card-actions .btn, .place-actions .btn {
+  flex: 1 1 calc(50% - 4px);
+  min-width: 0;
+}
 
 .hotel-list { display: flex; flex-direction: column; gap: 14px; }
 .hotel-card { display: flex; gap: 18px; padding: 0; overflow: hidden; }
@@ -2741,20 +2852,20 @@ textarea.trans-textarea:focus {
 .profile-head h2 { font-size: 20px; }
 .profile-role { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 13.5px; }
 .profile-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; color: var(--text-muted); font-size: 13.5px; }
-.account-actions { display: flex; gap: 10px; }
-.account-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border-soft); }
+.account-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.account-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border-soft); min-width: 0; }
 .account-row:last-child { border-bottom: none; }
-.account-row > div:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
+.account-row > div:nth-child(2) { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .account-row span { color: var(--text-muted); font-size: 13px; }
-.row-actions { display: flex; align-items: center; gap: 10px; }
+.row-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .admin-logout { justify-content: flex-end; margin-top: 4px; }
 
 /* ============================================================================
    Tables (shared admin + account)
    ============================================================================ */
 
-.table-wrap { overflow-x: auto; }
-.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 500px; }
 .table thead th {
   text-align: left;
   padding: 13px 16px;
@@ -3164,7 +3275,7 @@ textarea.trans-textarea:focus {
 @media (max-width: 991px) {
   .dash-grid { grid-template-columns: 1fr; }
   .budget-grid { grid-template-columns: 1fr; }
-  .fare-grid { grid-template-columns: 1fr; }
+  .fair-fare-grid, .fare-grid { grid-template-columns: 1fr; }
   .admin-dash-grid { grid-template-columns: 1fr; }
   .ai-grid { grid-template-columns: 1fr; }
   .analytics-grid { grid-template-columns: 1fr; }
@@ -3177,7 +3288,7 @@ textarea.trans-textarea:focus {
 }
 
 /* Mobile / tablet drawer */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   :root { --sidebar-w: 256px; }
 
   .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; width: 256px; }
@@ -3213,6 +3324,14 @@ textarea.trans-textarea:focus {
   .grid-2 { grid-template-columns: 1fr; }
   .route-inputs { flex-direction: column; align-items: stretch; gap: 14px; }
   .route-swap { transform: rotate(90deg); align-self: center; }
+
+  .safety-layout, .transport-layout, .lost-grid { grid-template-columns: 1fr; }
+  .safety-map-col, .lost-map-col, .transport-map-col { min-height: 380px; }
+  .discover-location-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+
+  .weather-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .forecast-grid { grid-template-columns: repeat(5, minmax(70px, 1fr)); overflow-x: auto; padding-bottom: 6px; }
+  .weather-recs { grid-template-columns: 1fr; }
 
   .hotel-card { flex-direction: column; }
   .hotel-image { width: 100%; min-height: 120px; }
@@ -3323,6 +3442,10 @@ textarea.trans-textarea:focus {
   /* ── Profile / account head ── */
   .account-head { flex-direction: column; align-items: flex-start; }
 
+  /* ── Account actions / rows on tablet & mobile ── */
+  .account-actions { flex-wrap: wrap; gap: 8px; }
+  .account-row { flex-wrap: wrap; gap: 8px; }
+
   /* ── Prevent any wide fixed-width element from causing overflow ── */
   .app-main, .page, .page-inner {
     max-width: 100%;
@@ -3347,6 +3470,14 @@ textarea.trans-textarea:focus {
   .page { padding: 14px 12px 28px; }
   .topbar { padding: 10px 12px; }
   .card-padded { padding: 14px; }
+
+  /* Map column min-height */
+  .safety-map-col, .lost-map-col, .transport-map-col { min-height: 320px; }
+
+  /* Place card actions & account actions: full width buttons */
+  .place-card-actions .btn, .place-actions .btn { flex: 1 1 100%; }
+  .account-actions .btn { flex: 1 1 100%; }
+  .stat-box { flex: 1 1 100%; }
 
   /* Auth */
   .auth-card { padding: 22px 16px; }
@@ -3388,6 +3519,56 @@ textarea.trans-textarea:focus {
 }
 
 /* ============================================================================
+   Small mobile screens (≤ 390px & 360px)
+   ============================================================================ */
+@media (max-width: 390px) {
+  .dash-row-2 {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .dash-stat-compact-card {
+    padding: 8px;
+    gap: 6px;
+  }
+  .dash-stat-compact-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .dash-stat-compact-val {
+    font-size: 15px;
+  }
+  .dash-hero-btn-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dash-hero-btn-primary, .dash-hero-btn-plan {
+    width: 100%;
+    text-align: center;
+  }
+  .otp-inputs {
+    gap: 4px;
+  }
+  .otp-input {
+    width: 34px;
+    height: 42px;
+    font-size: 16px;
+  }
+  .sub-tabs {
+    gap: 4px;
+  }
+  .sub-tab {
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+  .topbar {
+    padding: 8px 10px;
+  }
+  .topbar-right {
+    gap: 6px;
+  }
+}
+
+/* ============================================================================
    Intelligence layer UI additions (fare prediction, safety score, models,
    live route, emergency help).
    ============================================================================ */
@@ -3423,8 +3604,27 @@ textarea.trans-textarea:focus {
 .metric-value { width: 90px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
 
 /* --- Live route --- */
-.route-stats { display: flex; gap: 16px; margin: 10px 0 12px; color: var(--text-muted); font-size: 13px; }
-.route-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.route-stats { display: flex; gap: 14px; margin: 10px 0 12px; color: var(--text-muted); font-size: 13px; flex-wrap: wrap; }
+.stat-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm, 10px);
+  border: 1px solid var(--border-soft);
+  flex: 1 1 calc(50% - 7px);
+  min-width: 140px;
+}
+.stat-box .stat-label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: block;
+}
+.stat-box strong {
+  font-size: 15px;
+  color: var(--text);
+}
 .route-steps { margin: 14px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .route-steps li { font-size: 13.5px; color: var(--text-muted); }
 .route-live .map-demo { margin-top: 4px; }
@@ -3450,6 +3650,10 @@ textarea.trans-textarea:focus {
   font-family: inherit;
   width: 100%;
   height: 100%;
+  max-width: 100% !important;
+}
+.leaflet-container {
+  max-width: 100% !important;
 }
 .custom-leaflet-pin {
   background: transparent;

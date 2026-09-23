@@ -164,6 +164,41 @@ function MapViewController({ center, zoom, bounds, autoFit = false, locateTrigge
     }
   }, [locateTrigger, center, map]);
 
+  // Handle map invalidation / recalculating size on responsive resize & drawer change
+  useEffect(() => {
+    if (!map) return;
+
+    // Invalidate immediately and after transitions (drawer opening/closing, initial render)
+    const t1 = setTimeout(() => map.invalidateSize(), 100);
+    const t2 = setTimeout(() => map.invalidateSize(), 350);
+
+    const onResize = () => {
+      map.invalidateSize();
+    };
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+
+    let ro = null;
+    try {
+      const container = map.getContainer();
+      if (container && typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(() => {
+          map.invalidateSize();
+        });
+        ro.observe(container);
+      }
+    } catch {}
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      if (ro) ro.disconnect();
+    };
+  }, [map]);
+
   return null;
 }
 

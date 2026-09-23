@@ -130,6 +130,40 @@ function MapBoundsController({ center, bounds, autoFit }) {
     }
   }, [map, center, bounds, autoFit]);
 
+  // Handle map invalidation / recalculating size on responsive resize & drawer change
+  useEffect(() => {
+    if (!map) return;
+
+    const t1 = setTimeout(() => map.invalidateSize(), 100);
+    const t2 = setTimeout(() => map.invalidateSize(), 350);
+
+    const onResize = () => {
+      map.invalidateSize();
+    };
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+
+    let ro = null;
+    try {
+      const container = map.getContainer();
+      if (container && typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(() => {
+          map.invalidateSize();
+        });
+        ro.observe(container);
+      }
+    } catch {}
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      if (ro) ro.disconnect();
+    };
+  }, [map]);
+
   return null;
 }
 

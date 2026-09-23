@@ -259,7 +259,7 @@ export default function NavigationModal({
           {/* Controls Bar: Mode selector & Route Metrics */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             {/* Mode selection */}
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {MODES.map((m) => (
                 <button
                   key={m.id}
